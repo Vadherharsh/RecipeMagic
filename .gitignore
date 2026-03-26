@@ -1,0 +1,61 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+*.manifest
+*.spec
+
+# =========================
+# Virtual Environments
+# =========================
+bookenv/
+cookenv/
+environment/
+venv/
+env/
+.venv/
+.env/
+
+# =========================
+# Django
+# =========================
+db.sqlite3
+db.sqlite3-journal
+*.log
+staticfiles/
+media/
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# =========================
+# OS Generated
+# =========================
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# =========================
+# Misc
+# =========================
+*.bak
+*.tmp
+*.temp
+.gemini/
