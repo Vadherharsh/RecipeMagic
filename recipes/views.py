@@ -252,25 +252,13 @@ def user_profile(request, username):
 # TRENDING RECIPES
 # ============================================
 def trending_recipes(request):
-    """Show most popular recipes based on views, favorites, and ratings"""
-    from django.db.models import Count, Avg, Q
+    """Show most popular recipes based on ratings"""
+    # Order by highest rating first, then by newest
+    recipes = RecipesList.objects.all().order_by('-recipe_rating', '-id')
     
-    # Annotate recipes with:
-    # - favorite count (from Favorite model)
-    # - review count (from Review model)
-    # - average rating
-    recipes = RecipesList.objects.annotate(
-        favorite_count=Count('favorited_by', distinct=True),
-        review_count=Count('reviews', distinct=True),
-        avg_rating=Avg('reviews__rating')
-    ).order_by('-favorite_count', '-review_count', '-avg_rating')
-    
-    # Calculate trending score (simple algorithm)
+    # Add avg_rating attribute for template compatibility
     for recipe in recipes:
-        if recipe.avg_rating:
-            recipe.avg_rating = round(recipe.avg_rating, 1)
-        else:
-            recipe.avg_rating = recipe.recipe_rating
+        recipe.avg_rating = recipe.recipe_rating
     
     context = {
         'trending_recipes': recipes,

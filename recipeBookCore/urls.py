@@ -21,6 +21,9 @@ urlpatterns = [
     
     # ===== NEW: Random Recipe URL =====
     path('random-recipe/', views.random_recipe, name='random_recipe'),
+    
+    # ===== Trending Recipes =====
+    path('trending/', views.trending_recipes, name='trending'),
 ]
 
 if settings.DEBUG:
