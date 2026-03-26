@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact | RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/contact.css' %}">
+</head>
+<body class="page-shell">
+    <header class="site-header">
+        <nav class="site-nav">
+            <a class="brand" href="/">
+                <span class="brand-mark"><i class="fa-solid fa-utensils"></i></span>
+                <span>RecipeMagic</span>
+            </a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/about/">About</a>
+                <a href="/recipelist/">Recipes</a>
+                <a href="/contact/" class="nav-pill">Contact</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="contact-shell">
+        <div class="page-wrap contact-grid">
+            <section class="surface-card contact-info">
+                <span class="eyebrow"><i class="fa-regular fa-paper-plane"></i> Reach out</span>
+                <h1 class="title-lg" style="margin-top:16px;">Send a recipe request or idea.</h1>
+                <p class="lead">Use this form to suggest a recipe, share an idea, or send content you want added to the platform.</p>
+                <div class="contact-info-list">
+                    <div class="contact-info-item"><i class="fa-solid fa-envelope"></i><div><strong>Email support</strong><div class="muted">hello@recipemagic.com</div></div></div>
+                    <div class="contact-info-item"><i class="fa-solid fa-clock"></i><div><strong>Response time</strong><div class="muted">Usually within 1 to 2 business days</div></div></div>
+                    <div class="contact-info-item"><i class="fa-solid fa-image"></i><div><strong>Recipe submissions</strong><div class="muted">Image uploads are supported directly in the form</div></div></div>
+                </div>
+            </section>
+
+            <section class="surface-card contact-form-panel">
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST" enctype="multipart/form-data" class="form-grid">
+                    {% csrf_token %}
+                    <div class="field">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="username" required>
+                    </div>
+                    <div class="field">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="field">
+                        <label for="RecipeName">Recipe name</label>
+                        <input type="text" id="RecipeName" name="RecipeName" required>
+                    </div>
+                    <div class="field">
+                        <label for="RecipeDescription">Recipe description</label>
+                        <textarea id="RecipeDescription" name="RecipeDescription" required></textarea>
+                    </div>
+                    <div class="field">
+                        <label for="RecipeImage">Recipe image</label>
+                        <input type="file" id="RecipeImage" name="RecipeImage" accept="image/*" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit request</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    {% include 'footer.html' %}
+</body>
+</html>

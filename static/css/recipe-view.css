@@ -1,0 +1,88 @@
+.recipe-view-shell {
+    padding: 38px 0 24px;
+}
+
+.recipe-hero-panel {
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.recipe-hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.recipe-hero-image {
+    min-height: 380px;
+}
+
+.recipe-hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.recipe-hero-copy,
+.content-block {
+    padding: 30px;
+}
+
+.nutrition-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+}
+
+.nutrition-item,
+.step-item {
+    padding: 20px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.ingredient-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.step-list {
+    display: grid;
+    gap: 14px;
+    padding: 0;
+    list-style: none;
+}
+
+.step-item {
+    display: flex;
+    gap: 14px;
+}
+
+.step-number {
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+}
+
+.share-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+@media (max-width: 900px) {
+    .recipe-hero-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .recipe-hero-image {
+        min-height: 280px;
+    }
+}

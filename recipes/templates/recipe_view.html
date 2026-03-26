@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ recipes_data.recipe_name }} | RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/recipe-view.css' %}">
+</head>
+<body class="page-shell">
+    <header class="site-header">
+        <nav class="site-nav">
+            <a class="brand" href="/">
+                <span class="brand-mark"><i class="fa-solid fa-utensils"></i></span>
+                <span>RecipeMagic</span>
+            </a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/about/">About</a>
+                <a href="/recipelist/" class="nav-pill">Recipes</a>
+                <a href="/contact/">Contact</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="recipe-view-shell">
+        <div class="page-wrap">
+            <section class="surface-card recipe-hero-panel">
+                <div class="recipe-hero-grid">
+                    <div class="recipe-hero-image">
+                        <img src="/media/{{ recipes_data.recipe_image }}" alt="{{ recipes_data.recipe_name }}">
+                    </div>
+                    <div class="recipe-hero-copy">
+                        <span class="eyebrow"><i class="fa-solid fa-bowl-rice"></i> Recipe detail</span>
+                        <h1 class="title-lg" style="margin:16px 0 12px;">{{ recipes_data.recipe_name }}</h1>
+                        <p class="lead">{{ recipes_data.recipe_dec }}</p>
+                        <div class="chip-row">
+                            <span class="chip">{{ recipes_data.cuisine_type }}</span>
+                            <span class="chip alt">{{ recipes_data.difficulty }}</span>
+                            <span class="chip warning"><i class="fa-solid fa-star"></i> {{ recipes_data.recipe_rating }}/5</span>
+                            <span class="chip"><i class="fa-regular fa-clock"></i> {{ recipes_data.cooking_time }}</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="surface-card content-block" style="margin-bottom:22px;">
+                <h2 class="title-md" style="margin-bottom:18px;">Nutrition overview</h2>
+                <div class="nutrition-grid">
+                    <div class="nutrition-item"><strong>{{ recipes_data.calories }}</strong><div class="muted">Calories</div></div>
+                    <div class="nutrition-item"><strong>{{ recipes_data.protein }}g</strong><div class="muted">Protein</div></div>
+                    <div class="nutrition-item"><strong>{{ recipes_data.fat }}g</strong><div class="muted">Fat</div></div>
+                    <div class="nutrition-item"><strong>{{ recipes_data.carbs }}g</strong><div class="muted">Carbs</div></div>
+                </div>
+            </section>
+
+            <section class="surface-card content-block" style="margin-bottom:22px;">
+                <h2 class="title-md" style="margin-bottom:18px;">Ingredients</h2>
+                <div class="ingredient-list">
+                    {% for item in ingredients %}
+                    <span class="chip">{{ item }}</span>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="surface-card content-block" style="margin-bottom:22px;">
+                <h2 class="title-md" style="margin-bottom:18px;">Directions</h2>
+                {% if recipes_data.recipe_direcions %}
+                <ol class="step-list">
+                    <li class="step-item">
+                        <span class="step-number">1</span>
+                        <div>{{ recipes_data.recipe_direcions }}</div>
+                    </li>
+                </ol>
+                {% else %}
+                <div class="empty-state"><p class="muted">No directions available for this recipe yet.</p></div>
+                {% endif %}
+            </section>
+
+            <section class="surface-card content-block">
+                <h2 class="title-md" style="margin-bottom:18px;">Share and actions</h2>
+                <div class="share-actions">
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="btn btn-secondary">Facebook</a>
+                    <a href="https://wa.me/?text=Check out this recipe: {{ recipes_data.recipe_name }} - {{ request.build_absolute_uri }}" target="_blank" class="btn btn-secondary">WhatsApp</a>
+                    <button class="btn btn-primary" onclick="copyRecipeLink()">Copy link</button>
+                    <button class="btn btn-accent" onclick="window.print()">Print</button>
+                    <a href="javascript:history.back()" class="btn btn-secondary">Go back</a>
+                </div>
+                <div class="field" style="margin-top:18px;">
+                    <label for="recipeUrl">Recipe URL</label>
+                    <input type="text" id="recipeUrl" value="{{ request.build_absolute_uri }}" readonly>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    {% include 'footer.html' %}
+
+    <script>
+        function copyRecipeLink() {
+            const field = document.getElementById("recipeUrl");
+            field.select();
+            field.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(field.value);
+        }
+    </script>
+</body>
+</html>

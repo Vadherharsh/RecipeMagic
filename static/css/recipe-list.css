@@ -1,0 +1,43 @@
+.recipes-shell {
+    padding: 46px 0 24px;
+}
+
+.recipes-toolbar,
+.results-bar {
+    padding: 26px;
+    margin-bottom: 22px;
+}
+
+.search-row {
+    display: grid;
+    grid-template-columns: 1.4fr repeat(3, 0.8fr) auto;
+    gap: 12px;
+}
+
+.results-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.card-cta {
+    margin-top: 18px;
+}
+
+.empty-box {
+    padding: 36px;
+}
+
+@media (max-width: 980px) {
+    .search-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .search-row {
+        grid-template-columns: 1fr;
+    }
+}

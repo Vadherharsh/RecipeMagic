@@ -1,0 +1,116 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipes | RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/recipe-list.css' %}">
+</head>
+<body class="page-shell">
+    <header class="site-header">
+        <nav class="site-nav">
+            <a class="brand" href="/">
+                <span class="brand-mark"><i class="fa-solid fa-utensils"></i></span>
+                <span>RecipeMagic</span>
+            </a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/about/">About</a>
+                <a href="/recipelist/" class="nav-pill">Recipes</a>
+                <a href="/contact/">Contact</a>
+                <a href="/random-recipe/" class="nav-outline">Random</a>
+                {% if user.is_authenticated %}
+                <a href="/profile/{{ user.username }}/" class="nav-outline"><i class="fa-regular fa-user"></i> {{ user.username }}</a>
+                <a href="/logout/" class="nav-primary">Logout</a>
+                {% else %}
+                <a href="/login/" class="nav-primary">Login</a>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <main class="recipes-shell">
+        <div class="page-wrap">
+            <section class="surface-card recipes-toolbar">
+                <span class="eyebrow"><i class="fa-solid fa-sliders"></i> Search and filter</span>
+                <h1 class="title-lg" style="margin:16px 0 10px;">Browse all recipes</h1>
+                <p class="muted">Filter by cuisine, difficulty, and rating to find the right dish faster.</p>
+                <form method="get" action="/recipelist/" class="form-grid" style="margin-top:20px;">
+                    <div class="search-row">
+                        <input type="text" name="search" placeholder="Search for a recipe..." value="{{ search_query }}">
+                        <select name="cuisine">
+                            <option value="">All cuisines</option>
+                            {% for cuisine in cuisines %}
+                            <option value="{{ cuisine }}" {% if cuisine == selected_cuisine %}selected{% endif %}>{{ cuisine }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="difficulty">
+                            <option value="">All difficulties</option>
+                            {% for difficulty in difficulties %}
+                            <option value="{{ difficulty }}" {% if difficulty == selected_difficulty %}selected{% endif %}>{{ difficulty }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="min_rating">
+                            <option value="">Minimum rating</option>
+                            <option value="5" {% if selected_rating == '5' %}selected{% endif %}>5 stars</option>
+                            <option value="4" {% if selected_rating == '4' %}selected{% endif %}>4+ stars</option>
+                            <option value="3" {% if selected_rating == '3' %}selected{% endif %}>3+ stars</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary">Apply</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="surface-card results-bar">
+                <div><strong>{{ recipes_data|length }}</strong> recipes found</div>
+                <form method="get" action="/recipelist/">
+                    {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
+                    {% if selected_cuisine %}<input type="hidden" name="cuisine" value="{{ selected_cuisine }}">{% endif %}
+                    {% if selected_difficulty %}<input type="hidden" name="difficulty" value="{{ selected_difficulty }}">{% endif %}
+                    {% if selected_rating %}<input type="hidden" name="min_rating" value="{{ selected_rating }}">{% endif %}
+                    <select name="sort_by" onchange="this.form.submit()">
+                        <option value="">Sort by</option>
+                        <option value="rating" {% if selected_sort == 'rating' %}selected{% endif %}>Highest rated</option>
+                        <option value="name" {% if selected_sort == 'name' %}selected{% endif %}>Name A-Z</option>
+                        <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest first</option>
+                    </select>
+                </form>
+            </section>
+
+            {% if recipes_data %}
+            <div class="grid-cards">
+                {% for recipe in recipes_data %}
+                <article class="recipe-card">
+                    <img src="/media/{{ recipe.recipe_image }}" alt="{{ recipe.recipe_name }}">
+                    <div class="recipe-card-body">
+                        <h3 class="title-md">{{ recipe.recipe_name }}</h3>
+                        <div class="chip-row">
+                            {% if recipe.cuisine_type %}<span class="chip">{{ recipe.cuisine_type }}</span>{% endif %}
+                            {% if recipe.difficulty %}<span class="chip alt">{{ recipe.difficulty }}</span>{% endif %}
+                            <span class="chip warning"><i class="fa-solid fa-star"></i> {{ recipe.recipe_rating }}/5</span>
+                        </div>
+                        <p class="meta-line">{{ recipe.recipe_dec|truncatechars:100 }}</p>
+                        <div style="margin-top:18px;">
+                            <a href="/recipeview/{{ recipe.id }}" class="btn btn-primary">View recipe</a>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="surface-card empty-box empty-state">
+                <h3 class="title-md">No recipes found</h3>
+                <p class="muted">Try a broader search or reset the filters.</p>
+                <a href="/recipelist/" class="btn btn-primary">Browse all recipes</a>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    {% include 'footer.html' %}
+</body>
+</html>

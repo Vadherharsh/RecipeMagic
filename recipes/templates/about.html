@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About | RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/about.css' %}">
+</head>
+<body class="page-shell">
+    <header class="site-header">
+        <nav class="site-nav">
+            <a class="brand" href="/">
+                <span class="brand-mark"><i class="fa-solid fa-utensils"></i></span>
+                <span>RecipeMagic</span>
+            </a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/about/" class="nav-pill">About</a>
+                <a href="/recipelist/">Recipes</a>
+                <a href="/contact/">Contact</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="about-shell">
+        <div class="page-wrap about-grid">
+            <section class="surface-card about-main">
+                <span class="eyebrow"><i class="fa-solid fa-leaf"></i> About RecipeMagic</span>
+                <h1 class="title-lg" style="margin-top:16px;">A simpler, more professional way to explore recipes.</h1>
+                <p class="lead">RecipeMagic is built to help people discover, save, and revisit recipes without noise. Whether someone is new to cooking or already comfortable in the kitchen, the goal is the same: make great recipes easier to find and easier to trust.</p>
+                <div class="about-list">
+                    <div class="about-point"><strong>Thoughtful browsing</strong><div class="muted">Search, filter, and compare recipes in a cleaner layout.</div></div>
+                    <div class="about-point"><strong>Better recipe detail</strong><div class="muted">Ingredients, nutrition, and directions are easier to read and follow.</div></div>
+                    <div class="about-point"><strong>Community focus</strong><div class="muted">Trending pages, favorites, and profiles help highlight what people actually enjoy cooking.</div></div>
+                </div>
+            </section>
+
+            <aside class="surface-card about-side">
+                <span class="eyebrow"><i class="fa-solid fa-chart-column"></i> What matters here</span>
+                <div class="stats">
+                    <div class="stats-card"><h3 class="title-md">Clarity first</h3><p class="muted">Layouts feel calm, readable, and modern.</p></div>
+                    <div class="stats-card"><h3 class="title-md">Cooking confidence</h3><p class="muted">Better page structure makes recipes easier to use from start to finish.</p></div>
+                    <div class="stats-card"><h3 class="title-md">Room to grow</h3><p class="muted">The project is ready for more categories, saved recipes, and polished features.</p></div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    {% include 'footer.html' %}
+</body>
+</html>

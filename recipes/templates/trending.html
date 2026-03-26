@@ -1,0 +1,110 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trending | RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/trending.css' %}">
+</head>
+<body class="page-shell">
+    <header class="site-header">
+        <nav class="site-nav">
+            <a class="brand" href="/">
+                <span class="brand-mark"><i class="fa-solid fa-utensils"></i></span>
+                <span>RecipeMagic</span>
+            </a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/about/">About</a>
+                <a href="/recipelist/">Recipes</a>
+                <a href="/trending/" class="nav-pill">Trending</a>
+                <a href="/contact/">Contact</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="trending-shell">
+        <div class="page-wrap">
+            <section class="surface-card trending-top">
+                <span class="eyebrow"><i class="fa-solid fa-chart-line"></i> Community momentum</span>
+                <h1 class="title-lg" style="margin:16px 0 10px;">Trending recipes right now</h1>
+                <p class="lead">See which dishes are getting the most attention from ratings, favorites, and reviews.</p>
+                <div class="stats-grid">
+                    <div class="stats-card"><strong>{{ total_recipes }}</strong><div class="muted">Total recipes</div></div>
+                    <div class="stats-card"><strong>{% with max_rating=trending_recipes.first.avg_rating %}{{ max_rating|default:0 }}/5{% endwith %}</strong><div class="muted">Top rating</div></div>
+                    <div class="stats-card"><strong>{% with max_fav=trending_recipes.first.favorite_count %}{{ max_fav|default:0 }}{% endwith %}</strong><div class="muted">Most favorited</div></div>
+                    <div class="stats-card"><strong>{% with max_review=trending_recipes.first.review_count %}{{ max_review|default:0 }}{% endwith %}</strong><div class="muted">Most reviewed</div></div>
+                </div>
+            </section>
+
+            <div class="surface-card tabs-bar">
+                <button class="tab-btn active" onclick="filterTrending('all', this)">All trending</button>
+                <button class="tab-btn" onclick="filterTrending('favorites', this)">Most favorited</button>
+                <button class="tab-btn" onclick="filterTrending('rated', this)">Highest rated</button>
+                <button class="tab-btn" onclick="filterTrending('reviewed', this)">Most reviewed</button>
+            </div>
+
+            {% if trending_recipes %}
+            <div class="grid-cards" id="recipes-grid">
+                {% for recipe in trending_recipes %}
+                <article class="recipe-card" data-favorites="{{ recipe.favorite_count }}" data-rating="{{ recipe.avg_rating }}" data-reviews="{{ recipe.review_count }}">
+                    <img src="/media/{{ recipe.recipe_image }}" alt="{{ recipe.recipe_name }}">
+                    <div class="recipe-card-body">
+                        <h3 class="title-md">{{ recipe.recipe_name }}</h3>
+                        <div class="chip-row">
+                            {% if recipe.cuisine_type %}<span class="chip">{{ recipe.cuisine_type }}</span>{% endif %}
+                            <span class="chip alt"><i class="fa-regular fa-clock"></i> {{ recipe.cooking_time }}</span>
+                        </div>
+                        <p class="meta-line">{{ recipe.recipe_dec|truncatechars:90 }}</p>
+                        <div class="chip-row">
+                            <span class="chip warning"><i class="fa-solid fa-heart"></i> {{ recipe.favorite_count }}</span>
+                            <span class="chip warning"><i class="fa-solid fa-star"></i> {{ recipe.avg_rating }}</span>
+                            <span class="chip warning"><i class="fa-solid fa-comment"></i> {{ recipe.review_count }}</span>
+                        </div>
+                        <div style="margin-top:18px;">
+                            <a href="/recipeview/{{ recipe.id }}/" class="btn btn-primary">View recipe</a>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="surface-card empty-state">
+                <h3 class="title-md">No trending data yet</h3>
+                <p class="muted">Start favoriting and reviewing recipes to build trending activity.</p>
+                <a href="/recipelist/" class="btn btn-primary">Browse recipes</a>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    {% include 'footer.html' %}
+
+    <script>
+        function filterTrending(filter, button) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            const recipes = Array.from(document.querySelectorAll('.recipe-card'));
+            switch (filter) {
+                case 'favorites':
+                    recipes.sort((a, b) => b.dataset.favorites - a.dataset.favorites);
+                    break;
+                case 'rated':
+                    recipes.sort((a, b) => b.dataset.rating - a.dataset.rating);
+                    break;
+                case 'reviewed':
+                    recipes.sort((a, b) => b.dataset.reviews - a.dataset.reviews);
+                    break;
+                default:
+                    break;
+            }
+            const grid = document.getElementById('recipes-grid');
+            recipes.forEach(recipe => grid.appendChild(recipe));
+        }
+    </script>
+</body>
+</html>

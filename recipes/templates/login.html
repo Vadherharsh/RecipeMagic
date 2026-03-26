@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+<body>
+    <main class="auth-shell">
+        <div class="page-wrap auth-card">
+            <div class="auth-grid">
+                <section class="auth-panel">
+                    <span class="eyebrow"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign in</span>
+                    <h1 class="title-lg" style="margin:16px 0 10px;">Welcome back to RecipeMagic</h1>
+                    <p class="muted">Log in to manage favorites, explore recipes faster, and keep your profile active.</p>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" style="margin-top:16px;">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    {% if error %}
+                    <div class="alert alert-error" style="margin-top:16px;">{{ error }}</div>
+                    {% endif %}
+
+                    <form method="post" class="form-grid" id="loginForm" style="margin-top:22px;">
+                        {% csrf_token %}
+                        <div class="field">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" required>
+                        </div>
+                        <div class="field">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="loginBtn">Log in</button>
+                    </form>
+
+                    <div class="auth-social">
+                        <a href="#" class="btn btn-secondary" onclick="alert('Facebook login is not available yet.'); return false;">Facebook</a>
+                        <a href="#" class="btn btn-secondary" onclick="alert('Google login is not available yet.'); return false;">Google</a>
+                    </div>
+
+                    <div class="auth-links">
+                        <a href="{% url 'register' %}">Create account</a>
+                        <a href="{% url 'forgot_password' %}">Forgot password?</a>
+                    </div>
+                </section>
+
+                <section class="auth-visual login-visual">
+                    <div class="auth-visual-copy">
+                        <span class="eyebrow" style="background:rgba(255,255,255,0.14);color:#fff;">Professional cooking platform</span>
+                        <h2 class="title-lg" style="margin-top:18px;color:#fff;">Good food deserves a better interface.</h2>
+                        <p class="lead" style="color:rgba(255,255,255,0.84);">A cleaner experience for browsing recipes, reviewing dishes, and keeping your favorite ideas in one place.</p>
+                        <div class="auth-stats">
+                            <div class="auth-stat"><strong>15k+</strong><div>Recipe views</div></div>
+                            <div class="auth-stat"><strong>8k+</strong><div>Community saves</div></div>
+                            <div class="auth-stat"><strong>2M+</strong><div>Cooking moments</div></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById("loginForm")?.addEventListener("submit", function () {
+            document.getElementById("loginBtn").textContent = "Logging in...";
+        });
+    </script>
+</body>
+</html>

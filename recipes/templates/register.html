@@ -1,0 +1,83 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account | RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/register.css' %}">
+</head>
+<body>
+    <main class="auth-shell">
+        <div class="page-wrap auth-card">
+            <div class="auth-grid">
+                <section class="auth-panel">
+                    <span class="eyebrow"><i class="fa-solid fa-user-plus"></i> Create account</span>
+                    <h1 class="title-lg" style="margin:16px 0 10px;">Join the RecipeMagic community</h1>
+                    <p class="muted">Create an account to save favorites, review recipes, and keep your cooking profile organized.</p>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" style="margin-top:16px;">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" class="form-grid" id="registerForm" style="margin-top:22px;">
+                        {% csrf_token %}
+                        <div class="field">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" required>
+                        </div>
+                        <div class="field">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="field">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" required>
+                        </div>
+                        <div class="field">
+                            <label for="confirm_password">Confirm password</label>
+                            <input type="password" id="confirm_password" name="confirm_password" required>
+                        </div>
+                        <div class="muted">Password should be at least 6 characters.</div>
+                        <button type="submit" class="btn btn-primary" id="signupBtn">Create account</button>
+                    </form>
+
+                    <div class="auth-social">
+                        <a href="#" class="btn btn-secondary" onclick="alert('Facebook signup is not available yet.'); return false;">Facebook</a>
+                        <a href="#" class="btn btn-secondary" onclick="alert('Google signup is not available yet.'); return false;">Google</a>
+                    </div>
+
+                    <div class="auth-links">
+                        <a href="{% url 'login' %}">Already have an account?</a>
+                    </div>
+                </section>
+
+                <section class="auth-visual register-visual">
+                    <div class="auth-visual-copy">
+                        <span class="eyebrow" style="background:rgba(255,255,255,0.14);color:#fff;">Build your cooking space</span>
+                        <h2 class="title-lg" style="margin-top:18px;color:#fff;">Start saving recipes that match your taste.</h2>
+                        <p class="lead" style="color:rgba(255,255,255,0.84);">Create your profile and keep track of what you review, like, and want to cook next.</p>
+                        <div class="auth-stats">
+                            <div class="auth-stat"><strong>Favorites</strong><div>Save top dishes</div></div>
+                            <div class="auth-stat"><strong>Reviews</strong><div>Share feedback</div></div>
+                            <div class="auth-stat"><strong>Profile</strong><div>Track activity</div></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById("registerForm")?.addEventListener("submit", function () {
+            document.getElementById("signupBtn").textContent = "Creating account...";
+        });
+    </script>
+</body>
+</html>

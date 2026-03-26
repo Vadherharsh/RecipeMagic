@@ -1,0 +1,125 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile_user.username }} | RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+</head>
+<body class="page-shell">
+    <header class="site-header">
+        <nav class="site-nav">
+            <a class="brand" href="/">
+                <span class="brand-mark"><i class="fa-solid fa-utensils"></i></span>
+                <span>RecipeMagic</span>
+            </a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/about/">About</a>
+                <a href="/recipelist/">Recipes</a>
+                <a href="/contact/">Contact</a>
+                {% if user.is_authenticated %}
+                <a href="/profile/{{ user.username }}/" class="nav-pill"><i class="fa-regular fa-user"></i> {{ user.username }}</a>
+                <a href="/logout/" class="nav-primary">Logout</a>
+                {% else %}
+                <a href="/login/" class="nav-primary">Login</a>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <main class="profile-shell">
+        <div class="page-wrap">
+            <section class="surface-card profile-head">
+                <div class="profile-cover">
+                    <div class="profile-avatar"><i class="fa-regular fa-user"></i></div>
+                    <div>
+                        <span class="eyebrow"><i class="fa-solid fa-id-card"></i> Profile overview</span>
+                        <h1 class="title-lg" style="margin:16px 0 10px;">{{ profile_user.username }}</h1>
+                        <p class="muted">Member since {{ profile_user.date_joined|date:"F Y" }}</p>
+                        <div class="profile-stats">
+                            <div class="profile-stat"><strong>{{ review_count }}</strong><div class="muted">Reviews</div></div>
+                            <div class="profile-stat"><strong>{{ favorite_count }}</strong><div class="muted">Favorites</div></div>
+                            <div class="profile-stat"><strong>{{ avg_rating_given }}</strong><div class="muted">Average rating</div></div>
+                        </div>
+                        {% if is_own_profile %}
+                        <div style="margin-top:18px;"><button class="btn btn-primary" onclick="alert('Edit profile feature coming soon!')">Edit profile</button></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <div class="surface-card tabs-bar">
+                <button class="tab-btn active" onclick="showTab('reviews', this)">Reviews ({{ review_count }})</button>
+                <button class="tab-btn" onclick="showTab('favorites', this)">Favorites ({{ favorite_count }})</button>
+            </div>
+
+            <section id="reviews-tab" class="tab-content active">
+                {% if user_reviews %}
+                    {% for review in user_reviews %}
+                    <article class="surface-card review-card">
+                        <div class="review-top">
+                            <a href="/recipeview/{{ review.recipe.id }}/" class="title-md" style="text-decoration:none;">{{ review.recipe.recipe_name }}</a>
+                            <div class="muted">{{ review.created_at|date:"M d, Y" }}</div>
+                        </div>
+                        <div class="chip-row">
+                            <span class="chip warning">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= review.rating %}<i class="fa-solid fa-star"></i>{% else %}<i class="fa-regular fa-star"></i>{% endif %}
+                                {% endfor %}
+                            </span>
+                        </div>
+                        {% if review.comment %}<p class="meta-line">{{ review.comment }}</p>{% endif %}
+                    </article>
+                    {% endfor %}
+                {% else %}
+                <div class="surface-card empty-state">
+                    <h3 class="title-md">No reviews yet</h3>
+                    <p class="muted">{{ profile_user.username }} has not reviewed any recipes yet.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <section id="favorites-tab" class="tab-content" style="display:none;">
+                {% if user_favorites %}
+                <div class="grid-cards">
+                    {% for favorite in user_favorites %}
+                    <article class="recipe-card">
+                        <img src="/media/{{ favorite.recipe.recipe_image }}" alt="{{ favorite.recipe.recipe_name }}">
+                        <div class="recipe-card-body">
+                            <h3 class="title-md">{{ favorite.recipe.recipe_name }}</h3>
+                            <div class="chip-row">
+                                <span class="chip warning"><i class="fa-solid fa-star"></i> {{ favorite.recipe.recipe_rating }}/5</span>
+                                <span class="chip alt">{{ favorite.recipe.cooking_time }}</span>
+                            </div>
+                            <a href="/recipeview/{{ favorite.recipe.id }}/" class="btn btn-primary">View recipe</a>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="surface-card empty-state">
+                    <h3 class="title-md">No favorites yet</h3>
+                    <p class="muted">{{ profile_user.username }} has not saved any favorite recipes yet.</p>
+                </div>
+                {% endif %}
+            </section>
+        </div>
+    </main>
+
+    {% include 'footer.html' %}
+
+    <script>
+        function showTab(tabName, button) {
+            document.getElementById("reviews-tab").style.display = tabName === "reviews" ? "block" : "none";
+            document.getElementById("favorites-tab").style.display = tabName === "favorites" ? "block" : "none";
+            document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+            button.classList.add("active");
+        }
+    </script>
+</body>
+</html>

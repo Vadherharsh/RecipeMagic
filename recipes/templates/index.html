@@ -1,0 +1,112 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+</head>
+<body class="page-shell">
+    <header class="site-header">
+        <nav class="site-nav">
+            <a class="brand" href="/">
+                <span class="brand-mark"><i class="fa-solid fa-utensils"></i></span>
+                <span>RecipeMagic</span>
+            </a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/about/">About</a>
+                <a href="/recipelist/">Recipes</a>
+                <a href="/contact/">Contact</a>
+                {% if user.is_authenticated %}
+                <a href="/profile/{{ user.username }}/" class="nav-pill"><i class="fa-regular fa-user"></i> {{ user.username }}</a>
+                <a href="/logout/" class="nav-primary">Logout</a>
+                {% else %}
+                <a href="/login/" class="nav-primary">Login</a>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="home-hero">
+            <div class="page-wrap hero-grid">
+                <div class="hero-card">
+                    <div>
+                        <span class="eyebrow"><i class="fa-solid fa-fire-burner"></i> Modern recipe discovery</span>
+                        <h1 class="title-xl" style="margin-top:18px;">Cook smarter with recipes that actually feel worth trying.</h1>
+                        <p class="lead">RecipeMagic helps people explore standout dishes, save time in the kitchen, and find recipes in a cleaner, more professional way.</p>
+                        <div class="hero-actions">
+                            <a href="/recipelist/" class="btn btn-primary">Explore recipes</a>
+                            <a href="/trending/" class="btn btn-secondary">See trending picks</a>
+                        </div>
+                        <div class="hero-stats">
+                            <div class="hero-stat"><strong>Curated</strong><div class="muted">Better browsing</div></div>
+                            <div class="hero-stat"><strong>Clean</strong><div class="muted">Stronger readability</div></div>
+                            <div class="hero-stat"><strong>Fast</strong><div class="muted">Simple navigation</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="showcase-stack">
+                    <div class="surface-card feature-panel">
+                        <span class="eyebrow"><i class="fa-solid fa-star"></i> Why it feels better</span>
+                        <div class="feature-list">
+                            <div class="feature-item"><i class="fa-solid fa-circle-check"></i><div><strong>Cleaner layout</strong><div class="muted">More spacing, less clutter, easier scanning.</div></div></div>
+                            <div class="feature-item"><i class="fa-solid fa-circle-check"></i><div><strong>Professional cards</strong><div class="muted">Stronger hierarchy for images, titles, and actions.</div></div></div>
+                            <div class="feature-item"><i class="fa-solid fa-circle-check"></i><div><strong>Consistent styling</strong><div class="muted">Shared design across the main pages.</div></div></div>
+                        </div>
+                    </div>
+
+                    <div class="surface-card trend-panel">
+                        <span class="eyebrow"><i class="fa-solid fa-seedling"></i> Start here</span>
+                        <h2 class="title-md" style="margin:16px 0 10px;">Featured recipes from your collection</h2>
+                        <p class="muted">A quick preview of the dishes users can open right away.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {% if messages %}
+        <div class="page-wrap">
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <section class="home-section">
+            <div class="page-wrap">
+                <div style="margin-bottom:28px;">
+                    <span class="eyebrow"><i class="fa-solid fa-bowl-food"></i> Featured collection</span>
+                    <h2 class="title-lg" style="margin-top:16px;">Popular recipes worth opening first</h2>
+                </div>
+                <div class="grid-cards">
+                    {% for recipe in recipes_data %}
+                    {% if forloop.counter <= 4 %}
+                    <article class="recipe-card">
+                        <img src="/media/{{ recipe.recipe_image }}" alt="{{ recipe.recipe_name }}">
+                        <div class="recipe-card-body">
+                            <h3 class="title-md">{{ recipe.recipe_name }}</h3>
+                            <p class="meta-line">{{ recipe.recipe_dec|truncatechars:120 }}</p>
+                            <div style="margin-top:18px;">
+                                <a href="/recipeview/{{ recipe.id }}" class="btn btn-primary">View recipe</a>
+                            </div>
+                        </div>
+                    </article>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </main>
+
+    {% include 'footer.html' %}
+</body>
+</html>
