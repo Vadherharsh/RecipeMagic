@@ -267,3 +267,166 @@ def trending_recipes(request):
     
     return render(request, 'trending.html', context)
 
+# ============================================
+# RECIPE PDF GENERATION
+# ============================================
+import io
+import os
+from django.conf import settings
+from django.http import FileResponse, HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem, Image, Table, TableStyle, HRFlowable
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+
+def recipe_pdf(request, id):
+    try:
+        recipe = RecipesList.objects.get(id=id)
+    except RecipesList.DoesNotExist:
+        return HttpResponse("Recipe not found", status=404)
+        
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=50, leftMargin=50, topMargin=50, bottomMargin=50)
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        alignment=1, # Center
+        textColor=colors.HexColor("#e65100"),
+        fontSize=24,
+        spaceAfter=14
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        alignment=1,
+        textColor=colors.HexColor("#666666"),
+        fontSize=12,
+        spaceAfter=20
+    )
+    
+    h2_style = ParagraphStyle(
+        'CustomH2',
+        parent=styles['Heading2'],
+        textColor=colors.HexColor("#333333"),
+        fontSize=18,
+        spaceBefore=16,
+        spaceAfter=10,
+        borderPadding=(0,0,4,0)
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=11,
+        leading=16,
+        textColor=colors.HexColor("#444444")
+    )
+    
+    Story = []
+    
+    # Header Branding
+    branding_style = ParagraphStyle('Brand', parent=styles['Normal'], alignment=1, fontSize=10, textColor=colors.HexColor("#888888"), spaceAfter=20)
+    Story.append(Paragraph("<b>RecipeMagic<font color='#e65100'>.</font></b> Premium Recipe Collection", branding_style))
+    
+    # Title
+    Story.append(Paragraph(recipe.recipe_name, title_style))
+    
+    # Image
+    if recipe.recipe_image:
+        # Assuming recipe.recipe_image is a FileField/ImageField, getting the actual file path
+        img_path = os.path.join(settings.MEDIA_ROOT, str(recipe.recipe_image))
+        if os.path.exists(img_path):
+            try:
+                # Add image, preserve aspect ratio, fit within 6 inches wide, 3.5 inches high
+                img = Image(img_path, width=6*inch, height=3.5*inch, kind='proportional')
+                img_table = Table([[img]], colWidths=[6.5*inch])
+                img_table.setStyle(TableStyle([
+                    ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                    ('BOTTOMPADDING', (0,0), (-1,-1), 20),
+                ]))
+                Story.append(img_table)
+            except Exception as e:
+                pass # Skip image if it fails to load or incorrect format
+                
+    # Description
+    if recipe.recipe_dec:
+        Story.append(Paragraph(f"<i>{recipe.recipe_dec}</i>", subtitle_style))
+        
+    # Meta info in a nice table
+    meta_data = [[
+        Paragraph(f"<b>Cuisine:</b><br/>{recipe.cuisine_type}", normal_style),
+        Paragraph(f"<b>Difficulty:</b><br/>{recipe.difficulty}", normal_style),
+        Paragraph(f"<b>Time:</b><br/>{recipe.cooking_time}", normal_style),
+        Paragraph(f"<b>Rating:</b><br/>{recipe.recipe_rating}/5", normal_style)
+    ]]
+    
+    meta_table = Table(meta_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.2*inch])
+    meta_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#f9f9f9")),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('INNERGRID', (0,0), (-1,-1), 0.25, colors.HexColor("#e0e0e0")),
+        ('BOX', (0,0), (-1,-1), 0.25, colors.HexColor("#e0e0e0")),
+        ('LEFTPADDING', (0,0), (-1,-1), 12),
+        ('RIGHTPADDING', (0,0), (-1,-1), 12),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 12),
+        ('TOPPADDING', (0,0), (-1,-1), 12),
+    ]))
+    Story.append(meta_table)
+    Story.append(Spacer(1, 25))
+    
+    # Divider
+    Story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#e0e0e0"), spaceBefore=1, spaceAfter=20))
+    
+    # Ingredients
+    Story.append(Paragraph("Ingredients", h2_style))
+    ingredients_list = []
+    if hasattr(recipe, 'get_ingredients_list'):
+        ingredients_list = recipe.get_ingredients_list
+    elif recipe.recipe_ingredients:
+        ingredients_list = recipe.recipe_ingredients.split(",")
+        
+    if ingredients_list:
+        items = [ListItem(Paragraph(item, normal_style)) for item in ingredients_list]
+        Story.append(ListFlowable(items, bulletType='bullet', leftIndent=15, spaceAfter=5))
+    else:
+        Story.append(Paragraph("No ingredients listed.", normal_style))
+    Story.append(Spacer(1, 20))
+    
+    # Divider
+    Story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#e0e0e0"), spaceBefore=1, spaceAfter=20))
+    
+    # Directions
+    Story.append(Paragraph("Directions", h2_style))
+    directions_list = []
+    if hasattr(recipe, 'get_directions_list'):
+        directions_list = recipe.get_directions_list
+    elif hasattr(recipe, 'recipe_direcions') and recipe.recipe_direcions: # Notice the typo in the model name 'recipe_direcions'
+        directions_list = recipe.recipe_direcions.split("|")
+        
+    if directions_list:
+        items = [ListItem(Paragraph(step, normal_style)) for step in directions_list]
+        Story.append(ListFlowable(items, bulletType='1', leftIndent=15, spaceAfter=10))
+    else:
+        Story.append(Paragraph("No directions listed.", normal_style))
+        
+    # Build PDF
+    def add_footer(canvas, doc):
+        canvas.saveState()
+        canvas.setFont('Helvetica', 9)
+        canvas.setFillColor(colors.HexColor("#aaaaaa"))
+        canvas.drawString(inch, 0.75 * inch, f"Generated automatically by RecipeMagic ({request.get_host()})")
+        canvas.restoreState()
+        
+    doc.build(Story, onFirstPage=add_footer, onLaterPages=add_footer)
+    
+    buffer.seek(0)
+    filename = f"{recipe.recipe_name.replace(' ', '_')}.pdf"
+    return FileResponse(buffer, as_attachment=True, filename=filename)
+

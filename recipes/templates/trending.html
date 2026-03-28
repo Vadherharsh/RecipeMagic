@@ -7,7 +7,7 @@
     <title>Trending | RecipeMagic</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}?v=2.0">
     <link rel="stylesheet" href="{% static 'css/trending.css' %}">
 </head>
 <body class="page-shell">
@@ -60,7 +60,17 @@
                             <span class="chip alt"><i class="fa-regular fa-clock"></i> {{ recipe.cooking_time }}</span>
                         </div>
                         <p class="meta-line">{{ recipe.recipe_dec|truncatechars:90 }}</p>
-                        <div class="chip-row">
+                        
+                        <div class="recipe-ingredients-preview" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 4px;">
+                            {% for item in recipe.get_ingredients_list|slice:":3" %}
+                                <span style="font-size: 0.75rem; background: var(--surface-color, #f0f0f0); border: 1px solid var(--border-color, #e0e0e0); padding: 2px 8px; border-radius: 12px; color: var(--text-muted); white-space: nowrap;">{{ item|truncatechars:15 }}</span>
+                            {% endfor %}
+                            {% if recipe.get_ingredients_list|length > 3 %}
+                                <span style="font-size: 0.75rem; background: var(--surface-color, #f0f0f0); border: 1px solid var(--border-color, #e0e0e0); padding: 2px 8px; border-radius: 12px; color: var(--text-muted);">+{{ recipe.get_ingredients_list|length|add:"-3" }} more</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="chip-row" style="margin-top:10px;">
                             <span class="chip warning"><i class="fa-solid fa-heart"></i> {{ recipe.favorite_count }}</span>
                             <span class="chip warning"><i class="fa-solid fa-star"></i> {{ recipe.avg_rating }}</span>
                             <span class="chip warning"><i class="fa-solid fa-comment"></i> {{ recipe.review_count }}</span>

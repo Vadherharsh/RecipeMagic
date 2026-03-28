@@ -4,9 +4,12 @@ class RecipesList(models.Model):
     recipe_name = models.CharField(max_length=200, null=False, blank=False)
     recipe_dec = models.CharField(max_length=500, null=False, blank=False)
     recipe_rating = models.IntegerField(null=False, blank=False)
-    recipe_direcions = models.CharField(max_length=500, null=False, blank=False)
-    recipe_ingredients = models.CharField(
-        max_length=500,
+    recipe_direcions = models.TextField(
+        null=False,
+        blank=False,
+        help_text="Enter each direction separated by '|' ex: <b>Boil the water | Add the pasta | Cook for 10 minutes</b>"
+    )
+    recipe_ingredients = models.TextField(
         null=False,
         blank=False,
         help_text="enter value split by ',' ex: <b>nutritional yeast, soya sauce</b>"
@@ -62,6 +65,18 @@ class RecipesList(models.Model):
 
     def __str__(self):
         return self.recipe_name
+
+    @property
+    def get_ingredients_list(self):
+        if not self.recipe_ingredients:
+            return []
+        return [i.strip() for i in self.recipe_ingredients.split(',') if i.strip()]
+        
+    @property
+    def get_directions_list(self):
+        if not self.recipe_direcions:
+            return []
+        return [d.strip() for d in self.recipe_direcions.split('|') if d.strip()]
 
 
 class recipeRequest(models.Model):
