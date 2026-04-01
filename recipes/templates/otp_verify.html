@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP | RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}?v=2.0">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/otp.css' %}">
+</head>
+<body>
+    <main class="auth-shell">
+        <div class="page-wrap auth-card">
+            <div class="auth-grid">
+                <section class="auth-panel" style="padding: 60px 40px; text-align: center;">
+                    <div class="eyebrow" style="margin: 0 auto 20px;"><i class="fa-solid fa-shield-halved"></i> Security check</div>
+                    <h1 class="title-lg">Verify your choice</h1>
+                    <p class="muted" style="margin-bottom: 30px;">We've sent a 6-digit code to <strong style="color:var(--text-main);">{{ email }}</strong>. Please enter the code to continue.</p>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" style="margin-bottom: 24px;">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" id="otp-form">
+                        {% csrf_token %}
+                        <div class="otp-grid">
+                            <input type="text" maxlength="1" class="otp-input" name="otp_1" autofocus>
+                            <input type="text" maxlength="1" class="otp-input" name="otp_2">
+                            <input type="text" maxlength="1" class="otp-input" name="otp_3">
+                            <input type="text" maxlength="1" class="otp-input" name="otp_4">
+                            <input type="text" maxlength="1" class="otp-input" name="otp_5">
+                            <input type="text" maxlength="1" class="otp-input" name="otp_6">
+                        </div>
+                        <input type="hidden" name="otp" id="real-otp">
+                        <button type="submit" class="btn btn-primary" id="verify-btn" style="width: 100%;" disabled>Verify Code</button>
+                    </form>
+
+                    <div class="otp-timer">
+                        Didn't receive code? <span id="resend-timer-text">Resend in <span id="timer">30</span>s</span>
+                        <a href="{% url 'resend_otp' %}" id="resend-link" class="otp-resend disabled" style="display:none;">Resend OTP</a>
+                    </div>
+
+                    <div class="auth-links" style="margin-top: 40px; justify-content: center;">
+                        <a href="{% url 'login' %}"><i class="fa-solid fa-arrow-left"></i> Back to login</a>
+                    </div>
+                </section>
+
+                <section class="auth-visual" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+                    <div class="auth-visual-copy">
+                        <div class="otp-illustration" style="margin-bottom: 30px; opacity: 0.8;">
+                           <i class="fa-solid fa-lock" style="font-size: 80px; color: #fbbf24;"></i>
+                        </div>
+                        <h2 class="title-lg" style="color:#fff;">Two-step safety.</h2>
+                        <p class="lead" style="color:rgba(255,255,255,0.84);">Your security is our priority. We use OTP verification to ensure only you can access your recipes.</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const inputs = document.querySelectorAll('.otp-input');
+        const verifyBtn = document.getElementById('verify-btn');
+        const realOtpInput = document.getElementById('real-otp');
+        const form = document.getElementById('otp-form');
+
+        inputs.forEach((input, index) => {
+            input.addEventListener('keyup', (e) => {
+                const currentInput = input;
+                const nextInput = inputs[index + 1];
+                const prevInput = inputs[index - 1];
+
+                if (currentInput.value.length > 1) {
+                    currentInput.value = currentInput.value.slice(0, 1);
+                }
+
+                if (nextInput && currentInput.value !== "" && !['Backspace', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    nextInput.focus();
+                }
+
+                if (e.key === 'Backspace' && prevInput) {
+                    prevInput.focus();
+                }
+
+                updateOtpValue();
+                
+                // Auto-submit if 6 digits are filled
+                let otp = '';
+                inputs.forEach(input => otp += input.value);
+                if (otp.length === 6) {
+                    verifyBtn.textContent = "Verifying...";
+                    setTimeout(() => form.submit(), 300);
+                }
+            });
+
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pasteData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                pasteData.split('').forEach((char, i) => {
+                    if (inputs[i]) inputs[i].value = char;
+                });
+                updateOtpValue();
+                if (pasteData.length === 6) {
+                    verifyBtn.textContent = "Verifying...";
+                    form.submit();
+                }
+            });
+        });
+
+        function updateOtpValue() {
+            let otp = '';
+            inputs.forEach(input => otp += input.value);
+            realOtpInput.value = otp;
+            verifyBtn.disabled = otp.length !== 6;
+        }
+
+        // Resend Timer Logic
+        let timeLeft = 30;
+        const timerText = document.getElementById('resend-timer-text');
+        const timerSpan = document.getElementById('timer');
+        const resendLink = document.getElementById('resend-link');
+
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+            if (timerSpan) timerSpan.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                if (timerText) timerText.style.display = 'none';
+                if (resendLink) {
+                    resendLink.style.display = 'inline';
+                    resendLink.classList.remove('disabled');
+                }
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

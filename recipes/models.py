@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
+import datetime
 
 class RecipesList(models.Model):
     recipe_name = models.CharField(max_length=200, null=False, blank=False)
@@ -87,3 +90,44 @@ class recipeRequest(models.Model):
 
     def __str__(self):
         return f"{self.recipe_name} requested by {self.user}"
+
+
+class UserOTP(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+    email = models.EmailField()
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    purpose = models.CharField(max_length=20, choices=[('register', 'Register'), ('reset', 'Reset'), ('login', 'Login')], default='register')
+
+    def is_valid(self):
+        # OTP valid for 10 minutes
+        return timezone.now() < self.created_at + datetime.timedelta(minutes=10)
+
+    def __str__(self):
+        return f"OTP for {self.email} ({self.purpose})"
+
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
+    recipe = models.ForeignKey(RecipesList, on_delete=models.CASCADE, related_name='favorites')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'recipe')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} favorited {self.recipe.recipe_name}"
+
+class Review(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+    recipe = models.ForeignKey(RecipesList, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'recipe')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username}'s {self.rating}-star review for {self.recipe.recipe_name}"

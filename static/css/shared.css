@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+
 :root {
     --bg: #f5efe6;
     --surface: rgba(255, 255, 255, 0.92);
@@ -77,10 +79,25 @@ img {
 .brand {
     display: inline-flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     text-decoration: none;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.6rem;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.8px;
+    color: var(--text);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.brand:hover {
+    transform: scale(1.02);
+}
+
+.brand-logo {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(197, 106, 45, 0.2));
 }
 
 .brand-mark {
@@ -229,8 +246,18 @@ button {
     padding: 13px 22px;
     border-radius: 999px;
     text-decoration: none;
-    transition: 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     font-weight: 600;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.btn:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .btn-primary {
@@ -257,6 +284,22 @@ button {
 
 .recipe-card {
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: #fff;
+    border-radius: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.recipe-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
+}
+
+.recipe-card:active {
+    transform: translateY(-4px) scale(0.98);
+    box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.1);
 }
 
 .recipe-card img {
@@ -267,6 +310,9 @@ button {
 
 .recipe-card-body {
     padding: 22px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .chip-row {
@@ -286,6 +332,12 @@ button {
     font-weight: 600;
     background: #f8efe5;
     color: var(--brand-dark);
+    transition: all 0.3s ease;
+}
+
+.chip:hover {
+    transform: translateY(-2px);
+    filter: brightness(0.98);
 }
 
 .chip.alt {
@@ -469,4 +521,137 @@ button {
         width: 100%;
         text-align: center;
     }
+}
+
+/* Favorite Button Styles */
+.favorite-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--muted);
+}
+
+.favorite-btn:hover {
+    transform: scale(1.1);
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+.favorite-btn:active {
+    transform: scale(0.9);
+}
+
+.favorite-btn i {
+    font-size: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.favorite-btn.active {
+    color: #e63946;
+}
+
+.favorite-btn.active i {
+    animation: heartBeat 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Interactive Chip Styles */
+.chip.interactive {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.chip.interactive:hover {
+    background: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.chip.interactive.active {
+    background: #fff1f2;
+    color: #e11d48;
+    border-color: #fecdd3;
+}
+
+.chip.interactive.active i {
+    color: #e11d48;
+}
+
+@keyframes heartBeat {
+    0% { transform: scale(1); }
+    14% { transform: scale(1.3); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.3); }
+    70% { transform: scale(1); }
+}
+
+/* Favorites Gallery Styles */
+.favorites-empty {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.favorites-empty i {
+    font-size: 4rem;
+    color: rgba(197, 106, 45, 0.2);
+    margin-bottom: 20px;
+}
+
+/* Toast Notification Styles */
+#toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.toast {
+    background: #1f2937;
+    color: #fff;
+    padding: 14px 22px;
+    border-radius: 12px;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+    font-size: 0.95rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: toast-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    opacity: 0;
+}
+
+.toast i {
+    font-size: 1.1rem;
+}
+
+.toast-info i { color: #60a5fa; }
+.toast-success i { color: #34d399; }
+.toast-warning i { color: #fbbf24; }
+
+@keyframes toast-in {
+    0% { transform: translateX(100%); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+.toast.fade-out {
+    animation: toast-out 0.3s ease forwards;
+}
+
+@keyframes toast-out {
+    100% { transform: translateY(100%); opacity: 0; }
 }

@@ -1,12 +1,14 @@
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
-from .models import RecipesList, recipeRequest
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse, JsonResponse
+from .models import RecipesList, recipeRequest, UserOTP, Favorite, Review
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.conf import settings
+from django.db.models import Avg
+from django.utils import timezone
 import random
 
 # Create your views here.
@@ -17,15 +19,21 @@ def hello_world(request):
 # HOME PAGE - Shows all recipes
 def home_view(request):
     recipes_data = RecipesList.objects.all()
-    return render(request, "index.html", {"recipes_data": recipes_data})
+    favorited_recipe_ids = []
+    if request.user.is_authenticated:
+        favorited_recipe_ids = list(Favorite.objects.filter(user=request.user).values_list('recipe_id', flat=True))
+    return render(request, "index.html", {
+        "recipes_data": recipes_data,
+        "favorited_recipe_ids": favorited_recipe_ids
+    })
 
 # CONTACT PAGE
 def contact(request):
-    if request.GET:
-        user_name = request.GET.get("username")
-        user_email = request.GET.get("email")
-        user_recipe_name = request.GET.get("RecipeName")
-        user_recipe_image = request.GET.get("RecipeImage")
+    if request.method == "POST":
+        user_name = request.POST.get("username")
+        user_email = request.POST.get("email")
+        user_recipe_name = request.POST.get("RecipeName")
+        user_recipe_image = request.FILES.get("RecipeImage")
         print(user_name, user_email, user_recipe_name, user_recipe_image)
 
         recipeRequest.objects.create(
@@ -34,7 +42,7 @@ def contact(request):
             recipe_name=user_recipe_name, 
             recipe_image=user_recipe_image
         )
-        messages.info(request, "Request submitted successfully")    
+        messages.success(request, "Request submitted successfully")    
         return redirect("/contact/")
 
     return render(request, "contact.html")
@@ -79,6 +87,11 @@ def recipelist(request):
     cuisines = RecipesList.objects.values_list('cuisine_type', flat=True).distinct()
     difficulties = RecipesList.objects.values_list('difficulty', flat=True).distinct()
     
+    # Get favorites for current user
+    favorited_recipe_ids = []
+    if request.user.is_authenticated:
+        favorited_recipe_ids = list(Favorite.objects.filter(user=request.user).values_list('recipe_id', flat=True))
+    
     context = {
         'recipes_data': recipes_data,
         'cuisines': cuisines,
@@ -88,22 +101,31 @@ def recipelist(request):
         'selected_difficulty': difficulty,
         'selected_rating': min_rating,
         'selected_sort': sort_by,
+        'favorited_recipe_ids': favorited_recipe_ids,
     }
     
     return render(request, "recipePage.html", context)
 
 # RECIPE DETAIL VIEW PAGE
 def recipe_view(request, id):
-    recipes_data = RecipesList.objects.get(id=id)
-    print(recipes_data)
-    ingredients = recipes_data.recipe_ingredients.split(",")
+    recipe = get_object_or_404(RecipesList, id=id)
+    ingredients = recipe.recipe_ingredients.split(",")
+    
+    is_favorited = False
+    if request.user.is_authenticated:
+        is_favorited = Favorite.objects.filter(user=request.user, recipe=recipe).exists()
+        
     return render(request, "recipe_view.html", {
-        "recipes_data": recipes_data,
-        "ingredients": ingredients
+        "recipes_data": recipe,
+        "ingredients": ingredients,
+        "is_favorited": is_favorited
     })
 
 # LOGIN VIEW
 def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('/')
+
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
@@ -112,7 +134,8 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
-            return redirect('/')  # after login go to home page
+            messages.success(request, f"Welcome back, {user.username}!")
+            return redirect('/')
         else:
             messages.error(request, "Invalid Username or Password")
 
@@ -134,19 +157,28 @@ def forgot_password(request):
         try:
             user = User.objects.get(email=email)
             
-            # Generate a random temporary password
-            temp_password = f"Temp@{random.randint(1000, 9999)}"
+            # Generate OTP
+            otp_code = str(random.randint(100000, 999999))
             
-            # Set temporary password
-            user.set_password(temp_password)
-            user.save()
+            # Save OTP
+            UserOTP.objects.update_or_create(
+                email=email,
+                purpose='reset',
+                defaults={'otp': otp_code, 'user': user, 'created_at': timezone.now()}
+            )
             
-            # In a real project, you would send an email here
-            # For now, we'll show the password on screen (for testing)
-            messages.success(request, f"Your temporary password is: {temp_password}")
-            messages.info(request, "Please login with this password and change it later.")
+            # Send Email
+            send_mail(
+                'Password Reset OTP - RecipeMagic',
+                f'Your OTP for resetting your password is: {otp_code}. It is valid for 10 minutes.',
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
             
-            return redirect('login')
+            request.session['reset_email'] = email
+            messages.success(request, "OTP has been sent to your email.")
+            return redirect('verify_otp')
             
         except User.DoesNotExist:
             messages.error(request, "No account found with this email address!")
@@ -157,6 +189,9 @@ def forgot_password(request):
 # REGISTER (CREATE ACCOUNT) FUNCTIONALITY
 # ============================================
 def register(request):
+    if request.user.is_authenticated:
+        return redirect('/')
+
     if request.method == "POST":
         username = request.POST.get("username")
         email = request.POST.get("email")
@@ -166,25 +201,27 @@ def register(request):
         # Validation checks
         if password != confirm_password:
             messages.error(request, "Passwords do not match!")
-            return redirect('register')
+            return render(request, "register.html", {"username": username, "email": email})
         
         if User.objects.filter(username=username).exists():
             messages.error(request, "Username already taken!")
-            return redirect('register')
+            return render(request, "register.html", {"email": email})
         
         if User.objects.filter(email=email).exists():
             messages.error(request, "Email already registered!")
-            return redirect('register')
-        
-        # Create new user
+            return render(request, "register.html", {"username": username})
+
+        # Create the user directly
         user = User.objects.create_user(
             username=username,
             email=email,
             password=password
         )
         
-        messages.success(request, "Account created successfully! Please login.")
-        return redirect('login')
+        # Auto-login after registration
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        messages.success(request, f"Welcome to RecipeMagic, {user.username}! Your account has been created.")
+        return redirect('/')
     
     return render(request, "register.html")
 
@@ -252,17 +289,30 @@ def user_profile(request, username):
 # TRENDING RECIPES
 # ============================================
 def trending_recipes(request):
-    """Show most popular recipes based on ratings"""
-    # Order by highest rating first, then by newest
-    recipes = RecipesList.objects.all().order_by('-recipe_rating', '-id')
+    """Show most popular recipes based on real user activity"""
+    from django.db.models import Avg, Count
     
-    # Add avg_rating attribute for template compatibility
+    # We annotate the count of favorites and reviews, plus the calculated average rating
+    recipes = RecipesList.objects.annotate(
+        calculated_avg=Avg('reviews__rating'),
+        favorite_count=Count('favorites', distinct=True),
+        review_count=Count('reviews', distinct=True)
+    ).order_by('-calculated_avg', '-favorite_count', '-id')
+    
+    # Process recipes to handle None values gracefully for the template
     for recipe in recipes:
-        recipe.avg_rating = recipe.recipe_rating
+        # Use calculated avg if available, else fallback to static rating
+        recipe.avg_rating = round(recipe.calculated_avg, 1) if recipe.calculated_avg else float(recipe.recipe_rating)
+    
+    # Get favorites for current user
+    favorited_recipe_ids = []
+    if request.user.is_authenticated:
+        favorited_recipe_ids = list(Favorite.objects.filter(user=request.user).values_list('recipe_id', flat=True))
     
     context = {
         'trending_recipes': recipes,
         'total_recipes': recipes.count(),
+        'favorited_recipe_ids': favorited_recipe_ids,
     }
     
     return render(request, 'trending.html', context)
@@ -430,3 +480,171 @@ def recipe_pdf(request, id):
     filename = f"{recipe.recipe_name.replace(' ', '_')}.pdf"
     return FileResponse(buffer, as_attachment=True, filename=filename)
 
+
+# ============================================
+# OTP VERIFICATION
+# ============================================
+
+def verify_otp(request):
+    purpose = 'register'
+    email = ""
+    
+    if 'registration_data' in request.session:
+        email = request.session['registration_data']['email']
+        purpose = 'register'
+    elif 'reset_email' in request.session:
+        email = request.session['reset_email']
+        purpose = 'reset'
+    elif 'pre_login_email' in request.session:
+        email = request.session['pre_login_email']
+        purpose = 'login'
+    else:
+        messages.error(request, "Session expired. Please try again.")
+        return redirect('login')
+
+    if request.method == "POST":
+        # Combine the 6 digits if sent as separate fields, or just get one field
+        otp_received = request.POST.get("otp")
+        if not otp_received:
+            # Handle separate inputs if used in UI
+            otp_received = "".join([request.POST.get(f'otp_{i}', '') for i in range(1, 7)])
+
+        try:
+            otp_obj = UserOTP.objects.get(email=email, otp=otp_received, purpose=purpose)
+            
+            if otp_obj.is_valid():
+                if purpose == 'register':
+                    # Complete registration
+                    data = request.session.get('registration_data')
+                    user = User.objects.create_user(
+                        username=data['username'],
+                        email=data['email'],
+                        password=data['password']
+                    )
+                    # Auto-login after verification
+                    login(request, user)
+                    del request.session['registration_data']
+                    otp_obj.delete()
+                    messages.success(request, f"Welcome to RecipeMagic, {user.username}! Your email is verified.")
+                    return redirect('/')
+                elif purpose == 'login':
+                    # Complete login
+                    user_id = request.session.get('pre_login_user_id')
+                    user = User.objects.get(id=user_id)
+                    login(request, user)
+                    
+                    # Clean up
+                    del request.session['pre_login_user_id']
+                    del request.session['pre_login_email']
+                    otp_obj.delete()
+                    
+                    messages.success(request, f"Welcome back, {user.username}!")
+                    return redirect('/')
+                else:
+                    # Proceed to password reset
+                    request.session['otp_verified'] = True
+                    otp_obj.delete()
+                    return redirect('reset_password')
+            else:
+                messages.error(request, "OTP has expired. Please request a new one.")
+        except UserOTP.DoesNotExist:
+            messages.error(request, "Invalid OTP code.")
+
+    return render(request, "otp_verify.html", {"email": email, "purpose": purpose})
+
+def reset_password(request):
+    # Determine the email: either an authenticated user OR a verified OTP session
+    email = None
+    if request.user.is_authenticated:
+        email = request.user.email
+    elif request.session.get('otp_verified') and request.session.get('reset_email'):
+        email = request.session.get('reset_email')
+        
+    if not email:
+        messages.error(request, "Unauthorized access.")
+        return redirect('login')
+    
+    if request.method == "POST":
+        password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
+        
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match!")
+            return render(request, "reset_password_form.html")
+            
+        user = User.objects.get(email=email)
+        user.set_password(password)
+        user.save()
+        
+        if request.user.is_authenticated:
+            # Re-authenticate the session so the user doesn't get logged out instantly
+            update_session_auth_hash(request, user)
+            messages.success(request, "Password has been updated successfully.")
+            return redirect(f'/profile/{user.username}/')
+        else:
+            # Only delete these session keys if they exist (they don't for authenticated users)
+            if 'otp_verified' in request.session: del request.session['otp_verified']
+            if 'reset_email' in request.session: del request.session['reset_email']
+            
+            messages.success(request, "Password has been reset successfully. Please login.")
+            return redirect('login')
+        
+    return render(request, "reset_password_form.html")
+
+def resend_otp(request):
+    """Handle OTP re-generation and resending"""
+    purpose = 'register'
+    email = ""
+    
+    if 'registration_data' in request.session:
+        email = request.session['registration_data']['email']
+        purpose = 'register'
+    elif 'reset_email' in request.session:
+        email = request.session['reset_email']
+        purpose = 'reset'
+    elif 'pre_login_email' in request.session:
+        email = request.session['pre_login_email']
+        purpose = 'login'
+    else:
+        messages.error(request, "Session expired. Please try again.")
+        return redirect('login')
+        
+    # Generate new OTP
+    otp_code = str(random.randint(100000, 999999))
+    UserOTP.objects.update_or_create(
+        email=email,
+        purpose=purpose,
+        defaults={'otp': otp_code, 'created_at': timezone.now()}
+    )
+    
+    # Send Email
+    subject = 'New OTP Code - RecipeMagic'
+    body = f'Your new OTP code is: {otp_code}. It is valid for 10 minutes.'
+    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [email])
+    
+    messages.success(request, "A new OTP code has been sent to your email.")
+    return redirect('verify_otp')
+
+@login_required
+def toggle_favorite(request, id):
+    recipe = get_object_or_404(RecipesList, id=id)
+    favorite, created = Favorite.objects.get_or_create(user=request.user, recipe=recipe)
+    
+    if not created:
+        favorite.delete()
+        status = "removed"
+    else:
+        status = "added"
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': status})
+    
+    return redirect(request.META.get('HTTP_REFERER', 'recipelist'))
+
+@login_required
+def favorites_list(request):
+    user_favorites = Favorite.objects.filter(user=request.user).select_related('recipe')
+    context = {
+        'favorites': user_favorites,
+    }
+    return render(request, 'favorites.html', context)

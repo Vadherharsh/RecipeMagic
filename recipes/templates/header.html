@@ -1,0 +1,24 @@
+{% load static %}
+<header class="site-header">
+    <nav class="site-nav">
+        <a class="brand" href="/">
+            <img src="{% static 'images/logo.png' %}" alt="RecipeMagic Logo" class="brand-logo">
+            <span>RecipeMagic</span>
+        </a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/about/">About</a>
+            <a href="/recipelist/">Recipes</a>
+            <a href="/trending/">Trending</a>
+            <a href="/random-recipe/" class="nav-outline">Random</a>
+            {% if user.is_authenticated %}
+            <a href="/favorites/" class="nav-outline"><i class="fa-solid fa-heart"></i> Favorites</a>
+            <a href="/profile/{{ user.username }}/" class="nav-pill"><i class="fa-regular fa-user"></i> {{ user.username }}</a>
+            <a href="/logout/" class="nav-primary">Logout</a>
+            {% else %}
+            <a href="/contact/">Contact</a>
+            <a href="/login/" class="nav-primary">Login</a>
+            {% endif %}
+        </div>
+    </nav>
+</header>

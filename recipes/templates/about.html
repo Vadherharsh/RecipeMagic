@@ -11,20 +11,7 @@
     <link rel="stylesheet" href="{% static 'css/about.css' %}">
 </head>
 <body class="page-shell">
-    <header class="site-header">
-        <nav class="site-nav">
-            <a class="brand" href="/">
-                <span class="brand-mark"><i class="fa-solid fa-utensils"></i></span>
-                <span>RecipeMagic</span>
-            </a>
-            <div class="nav-links">
-                <a href="/">Home</a>
-                <a href="/about/" class="nav-pill">About</a>
-                <a href="/recipelist/">Recipes</a>
-                <a href="/contact/">Contact</a>
-            </div>
-        </nav>
-    </header>
+    {% include 'header.html' %}
 
     <main class="about-shell">
         <div class="page-wrap about-grid">

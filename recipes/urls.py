@@ -12,6 +12,8 @@ urlpatterns = [
     path('contact/', views.contact, name='contact'),
     path('about/', views.about, name='about'),
     path('recipeview/<int:id>/', views.recipe_view, name='recipe_view'),
+    path('toggle-favorite/<int:id>/', views.toggle_favorite, name='toggle_favorite'),
+    path('favorites/', views.favorites_list, name='favorites'),
 ]
 
 if settings.DEBUG:

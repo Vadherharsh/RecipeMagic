@@ -11,20 +11,7 @@
     <link rel="stylesheet" href="{% static 'css/contact.css' %}">
 </head>
 <body class="page-shell">
-    <header class="site-header">
-        <nav class="site-nav">
-            <a class="brand" href="/">
-                <span class="brand-mark"><i class="fa-solid fa-utensils"></i></span>
-                <span>RecipeMagic</span>
-            </a>
-            <div class="nav-links">
-                <a href="/">Home</a>
-                <a href="/about/">About</a>
-                <a href="/recipelist/">Recipes</a>
-                <a href="/contact/" class="nav-pill">Contact</a>
-            </div>
-        </nav>
-    </header>
+    {% include 'header.html' %}
 
     <main class="contact-shell">
         <div class="page-wrap contact-grid">
@@ -68,7 +55,14 @@
                     </div>
                     <div class="field">
                         <label for="RecipeImage">Recipe image</label>
-                        <input type="file" id="RecipeImage" name="RecipeImage" accept="image/*" required>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="RecipeImage" name="RecipeImage" accept="image/*" required class="file-upload-input">
+                            <label for="RecipeImage" class="file-upload-trigger">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <span>Choose an image</span>
+                            </label>
+                            <div id="file-name-display" class="file-name-alt">No file selected</div>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary">Submit request</button>
                 </form>
@@ -77,5 +71,20 @@
     </main>
 
     {% include 'footer.html' %}
+
+    <script>
+        document.getElementById('RecipeImage').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : "No file selected";
+            const display = document.getElementById('file-name-display');
+            display.textContent = fileName;
+            
+            if (e.target.files[0]) {
+                const trigger = document.querySelector('.file-upload-trigger');
+                display.classList.add('has-file');
+                trigger.classList.add('active');
+                trigger.querySelector('span').textContent = 'Change image';
+            }
+        });
+    </script>
 </body>
 </html>

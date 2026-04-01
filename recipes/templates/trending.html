@@ -10,22 +10,10 @@
     <link rel="stylesheet" href="{% static 'css/shared.css' %}?v=2.0">
     <link rel="stylesheet" href="{% static 'css/trending.css' %}">
 </head>
-<body class="page-shell">
-    <header class="site-header">
-        <nav class="site-nav">
-            <a class="brand" href="/">
-                <span class="brand-mark"><i class="fa-solid fa-utensils"></i></span>
-                <span>RecipeMagic</span>
-            </a>
-            <div class="nav-links">
-                <a href="/">Home</a>
-                <a href="/about/">About</a>
-                <a href="/recipelist/">Recipes</a>
-                <a href="/trending/" class="nav-pill">Trending</a>
-                <a href="/contact/">Contact</a>
-            </div>
-        </nav>
-    </header>
+<body class="page-shell" 
+      data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+      data-csrf="{{ csrf_token }}">
+    {% include 'header.html' %}
 
     <main class="trending-shell">
         <div class="page-wrap">
@@ -41,25 +29,43 @@
                 </div>
             </section>
 
-            <div class="surface-card tabs-bar">
-                <button class="tab-btn active" onclick="filterTrending('all', this)">All trending</button>
-                <button class="tab-btn" onclick="filterTrending('favorites', this)">Most favorited</button>
-                <button class="tab-btn" onclick="filterTrending('rated', this)">Highest rated</button>
-                <button class="tab-btn" onclick="filterTrending('reviewed', this)">Most reviewed</button>
+            <div class="tabs-container">
+                <div class="tabs-bar">
+                    <button class="tab-btn active" onclick="filterTrending('all', this)">
+                        <i class="fa-solid fa-fire"></i> All trending
+                    </button>
+                    <button class="tab-btn" onclick="filterTrending('favorites', this)">
+                        <i class="fa-solid fa-heart"></i> Most favorited
+                    </button>
+                    <button class="tab-btn" onclick="filterTrending('rated', this)">
+                        <i class="fa-solid fa-star"></i> Highest rated
+                    </button>
+                    <button class="tab-btn" onclick="filterTrending('reviewed', this)">
+                        <i class="fa-solid fa-comment"></i> Most reviewed
+                    </button>
+                </div>
             </div>
 
             {% if trending_recipes %}
             <div class="grid-cards" id="recipes-grid">
                 {% for recipe in trending_recipes %}
-                <article class="recipe-card" data-favorites="{{ recipe.favorite_count }}" data-rating="{{ recipe.avg_rating }}" data-reviews="{{ recipe.review_count }}">
+                <article class="recipe-card" style="position: relative;" data-index="{{ forloop.counter }}" data-favorites="{{ recipe.favorite_count|default:0 }}" data-rating="{{ recipe.avg_rating|default:0 }}" data-reviews="{{ recipe.review_count|default:0 }}">
+                    {% if user.is_authenticated %}
+                    <button class="favorite-btn {% if recipe.id in favorited_recipe_ids %}active{% endif %}" 
+                            data-recipe-id="{{ recipe.id }}" 
+                            title="Toggle Favorite">
+                        <i class="{% if recipe.id in favorited_recipe_ids %}fa-solid{% else %}fa-regular{% endif %} fa-heart"></i>
+                    </button>
+                    {% endif %}
                     <img src="/media/{{ recipe.recipe_image }}" alt="{{ recipe.recipe_name }}">
-                    <div class="recipe-card-body">
+                    <div class="recipe-card-body" style="flex: 1; display: flex; flex-direction: column;">
                         <h3 class="title-md">{{ recipe.recipe_name }}</h3>
                         <div class="chip-row">
                             {% if recipe.cuisine_type %}<span class="chip">{{ recipe.cuisine_type }}</span>{% endif %}
                             <span class="chip alt"><i class="fa-regular fa-clock"></i> {{ recipe.cooking_time }}</span>
+                            <span class="chip warning"><i class="fa-solid fa-star"></i> {{ recipe.avg_rating }}</span>
                         </div>
-                        <p class="meta-line">{{ recipe.recipe_dec|truncatechars:90 }}</p>
+                        <p class="meta-line">{{ recipe.recipe_dec|truncatechars:100 }}</p>
                         
                         <div class="recipe-ingredients-preview" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 4px;">
                             {% for item in recipe.get_ingredients_list|slice:":3" %}
@@ -70,12 +76,7 @@
                             {% endif %}
                         </div>
 
-                        <div class="chip-row" style="margin-top:10px;">
-                            <span class="chip warning"><i class="fa-solid fa-heart"></i> {{ recipe.favorite_count }}</span>
-                            <span class="chip warning"><i class="fa-solid fa-star"></i> {{ recipe.avg_rating }}</span>
-                            <span class="chip warning"><i class="fa-solid fa-comment"></i> {{ recipe.review_count }}</span>
-                        </div>
-                        <div style="margin-top:18px;">
+                        <div style="margin-top:auto; padding-top:18px;">
                             <a href="/recipeview/{{ recipe.id }}/" class="btn btn-primary">View recipe</a>
                         </div>
                     </div>
@@ -94,26 +95,133 @@
 
     {% include 'footer.html' %}
 
+    <div id="toast-container"></div>
+
     <script>
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'circle-check';
+            if (type === 'warning') icon = 'triangle-exclamation';
+            if (type === 'error') icon = 'circle-xmark';
+            
+            toast.innerHTML = `<i class="fa-solid fa-${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Read brand-safe data from the body attributes
+            const isAuthenticated = document.body.dataset.authenticated === 'true';
+            const csrfToken = document.body.dataset.csrf;
+
+            const favoriteTriggers = document.querySelectorAll('.favorite-btn, .chip.interactive');
+            
+            favoriteTriggers.forEach(trigger => {
+                trigger.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (!isAuthenticated) {
+                        showToast('Please log in to save favorites!', 'warning');
+                        return;
+                    }
+
+                    const recipeId = this.dataset.recipeId;
+                    
+                    fetch(`/toggle-favorite/${recipeId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update ALL triggers for this recipe ID on the page
+                        const allTriggers = document.querySelectorAll(`[data-recipe-id="${recipeId}"]`);
+                        allTriggers.forEach(trig => {
+                            const icon = trig.querySelector('i');
+                            const countSpan = trig.querySelector('.fav-count');
+                            
+                            if (data.status === 'added') {
+                                trig.classList.add('active');
+                                if (icon) {
+                                    icon.classList.remove('fa-regular');
+                                    icon.classList.add('fa-solid');
+                                }
+                                if (countSpan && !trig.classList.contains('favorite-btn')) {
+                                    countSpan.textContent = parseInt(countSpan.textContent) + 1;
+                                }
+                            } else {
+                                trig.classList.remove('active');
+                                if (icon) {
+                                    icon.classList.remove('fa-solid');
+                                    icon.classList.add('fa-regular');
+                                }
+                                if (countSpan && !trig.classList.contains('favorite-btn')) {
+                                    countSpan.textContent = Math.max(0, parseInt(countSpan.textContent) - 1);
+                                }
+                            }
+                        });
+                        
+                        showToast(data.status === 'added' ? 'Added to favorites!' : 'Removed from favorites!', 'success');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showToast('Something went wrong. Try again.', 'error');
+                    });
+                });
+            });
+        });
+
         function filterTrending(filter, button) {
+            const grid = document.getElementById('recipes-grid');
+            if (!grid) return;
+            
+            // Highlight the active button
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-            const recipes = Array.from(document.querySelectorAll('.recipe-card'));
-            switch (filter) {
-                case 'favorites':
-                    recipes.sort((a, b) => b.dataset.favorites - a.dataset.favorites);
-                    break;
-                case 'rated':
-                    recipes.sort((a, b) => b.dataset.rating - a.dataset.rating);
-                    break;
-                case 'reviewed':
-                    recipes.sort((a, b) => b.dataset.reviews - a.dataset.reviews);
-                    break;
-                default:
-                    break;
-            }
-            const grid = document.getElementById('recipes-grid');
-            recipes.forEach(recipe => grid.appendChild(recipe));
+            
+            // Add a smooth fade-out effect during reordering
+            grid.style.opacity = '0';
+            
+            setTimeout(() => {
+                const recipes = Array.from(document.querySelectorAll('.recipe-card'));
+                const parseVal = (val) => parseFloat(val === "None" || !val ? 0 : val);
+
+                switch (filter) {
+                    case 'favorites':
+                        recipes.sort((a, b) => parseVal(b.dataset.favorites) - parseVal(a.dataset.favorites));
+                        break;
+                    case 'rated':
+                        recipes.sort((a, b) => parseVal(b.dataset.rating) - parseVal(a.dataset.rating));
+                        break;
+                    case 'reviewed':
+                        recipes.sort((a, b) => parseVal(b.dataset.reviews) - parseVal(a.dataset.reviews));
+                        break;
+                    case 'all':
+                    default:
+                        recipes.sort((a, b) => parseVal(a.dataset.index) - parseVal(b.dataset.index));
+                        break;
+                }
+                
+                // Purely visual effect to make reordering feel smooth
+                recipes.forEach((recipe, index) => {
+                    grid.appendChild(recipe);
+                });
+                
+                // Fade back in
+                grid.style.opacity = '1';
+                
+            }, 300);
         }
     </script>
 </body>

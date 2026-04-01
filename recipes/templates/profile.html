@@ -1,0 +1,505 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile_user.username }}'s Profile | RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}?v=2.0">
+    <style>
+        /* Premium Layout */
+        .profile-container {
+            border-radius: var(--radius-xl);
+            background: var(--surface-strong, #ffffff);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+
+        .profile-cover {
+            height: 220px;
+            background: linear-gradient(135deg, var(--brand) 0%, #d67a3a 50%, var(--brand-dark) 100%);
+            position: relative;
+        }
+
+        .profile-cover::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.15) 2px, transparent 2px);
+            background-size: 30px 30px;
+            opacity: 0.6;
+        }
+
+        .profile-body {
+            padding: 0 44px 40px;
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+        }
+
+        /* Modern Avatar */
+        .profile-avatar-wrapper {
+            margin-top: -65px;
+            margin-right: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .profile-avatar {
+            width: 140px;
+            height: 140px;
+            background: #ffffff;
+            border-radius: 50%;
+            padding: 6px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+        }
+
+        .profile-avatar-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fff7ef, #f2decb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            color: var(--brand);
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 1px solid rgba(197, 106, 45, 0.1);
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+
+        /* User Header */
+        .profile-info {
+            flex: 1;
+            margin-top: 16px;
+            min-width: 250px;
+        }
+
+        .profile-name-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .profile-name {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 0 0 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .badge-verified {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px; height: 26px;
+            background: var(--brand);
+            border-radius: 50%;
+            color: white;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 10px rgba(197, 106, 45, 0.3);
+        }
+
+        .profile-joined {
+            color: var(--muted);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        /* Actions */
+        .profile-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px; /* Alignment tweak for the right side */
+        }
+
+        /* Floating Stats */
+        .profile-stats-grid {
+            display: flex;
+            gap: 32px;
+            margin-top: 24px;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: left;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.1;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-top: 4px;
+        }
+
+        .stat-divider {
+            width: 1px;
+            height: 44px;
+            background: var(--line);
+        }
+
+        /* Premium Tabs */
+        .modern-tabs {
+            display: flex;
+            gap: 16px;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+            margin-bottom: 32px;
+        }
+
+        .modern-tab {
+            background: transparent;
+            border: none;
+            padding: 16px 24px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+            position: relative;
+            transition: 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modern-tab:hover {
+            color: var(--brand);
+            background: rgba(197, 106, 45, 0.04);
+            border-radius: 12px 12px 0 0;
+            transform: translateY(-2px);
+        }
+
+        .modern-tab:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .modern-tab.active {
+            color: var(--brand);
+        }
+
+        .modern-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--brand);
+            border-radius: 3px 3px 0 0;
+            animation: slideUp 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(4px) scaleX(0.8); opacity: 0; }
+            to { transform: translateY(0) scaleX(1); opacity: 1; }
+        }
+
+        /* Review Cards Pro */
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 24px;
+        }
+
+        .review-card-pro {
+            background: var(--surface-strong, #ffffff);
+            border-radius: var(--radius-lg);
+            padding: 26px;
+            border: 1px solid var(--line);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .review-card-pro:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 35px rgba(0,0,0,0.1);
+            border-color: rgba(197, 106, 45, 0.2);
+        }
+
+        .review-card-pro:active {
+            transform: translateY(-2px) scale(0.98);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+        }
+
+        .review-pro-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .review-pro-recipe {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .review-recipe-img {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .review-recipe-meta h4 {
+            margin: 0 0 6px 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .review-recipe-meta h4 a {
+            color: var(--text);
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .review-recipe-meta h4 a:hover {
+            color: var(--brand);
+        }
+
+        .review-pro-rating {
+            background: #fff8eb;
+            color: var(--brand-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(242, 184, 75, 0.4);
+        }
+
+        .review-pro-body {
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 1rem;
+            flex: 1;
+            background: #fcfcfc;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.02);
+            font-style: italic;
+        }
+
+        .review-pro-date {
+            font-size: 0.88rem;
+            color: var(--muted);
+            border-top: 1px dashed rgba(0,0,0,0.08);
+            padding-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="page-shell">
+    {% include 'header.html' %}
+
+    <main class="page-wrap" style="padding-top: 40px; padding-bottom: 80px;">
+        
+        <!-- Premium Profile Header -->
+        <section class="profile-container">
+            <div class="profile-cover"></div>
+            <div class="profile-body">
+                
+                <div style="display: flex; flex-wrap: wrap; gap: 32px; width: 100%;">
+                    <div class="profile-avatar-wrapper">
+                        <div class="profile-avatar">
+                            <div class="profile-avatar-inner">
+                                {{ profile_user.username|make_list|first }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-info">
+                        <div class="profile-name-row">
+                            <div>
+                                <h1 class="profile-name">
+                                    {{ profile_user.username }}
+                                    {% if is_own_profile %}
+                                    <span class="badge-verified" title="Verified Chef"><i class="fa-solid fa-check"></i></span>
+                                    {% endif %}
+                                </h1>
+                                <div class="profile-joined">
+                                    <i class="fa-solid fa-calendar-check" style="color: var(--brand);"></i> Member since {{ profile_user.date_joined|date:"F Y" }}
+                                </div>
+                            </div>
+                            
+                            <div class="profile-actions">
+                                {% if is_own_profile %}
+                                <a href="/reset-password-form/" class="btn btn-secondary" style="border-radius: 999px; padding: 10px 18px; font-weight: 600; font-size: 0.95rem;">
+                                    <i class="fa-solid fa-shield-halved"></i> Security
+                                </a>
+                                <a href="/recipelist/" class="btn btn-primary" style="border-radius: 999px; padding: 10px 18px; font-weight: 600; font-size: 0.95rem;">
+                                    <i class="fa-solid fa-compass"></i> Discover
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="profile-stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-value">{{ favorite_count }}</div>
+                                <div class="stat-label">Favorites</div>
+                            </div>
+                            <div class="stat-divider"></div>
+                            <div class="stat-item">
+                                <div class="stat-value">{{ review_count }}</div>
+                                <div class="stat-label">Reviews</div>
+                            </div>
+                            <div class="stat-divider"></div>
+                            <div class="stat-item">
+                                <div class="stat-value" style="display:flex; align-items:center; gap:6px;">
+                                    {{ avg_rating_given }} <i class="fa-solid fa-star" style="color:var(--warning); font-size:1.3rem;"></i>
+                                </div>
+                                <div class="stat-label">Avg Rating</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Premium Tabs -->
+        <div class="modern-tabs">
+            <button class="modern-tab active" onclick="switchTab('favorites')">
+                <i class="fa-solid fa-bookmark"></i> Favorite Cookbook
+            </button>
+            <button class="modern-tab" onclick="switchTab('reviews')">
+                <i class="fa-solid fa-star-half-stroke"></i> Past Reviews
+            </button>
+        </div>
+
+        <!-- Favorites Content -->
+        <div id="favorites" class="tab-content active">
+            {% if user_favorites %}
+            <div class="grid-cards">
+                {% for fav in user_favorites %}
+                <article class="recipe-card" style="position: relative;">
+                    <a href="/recipeview/{{ fav.recipe.id }}/" style="text-decoration: none; color: inherit; display: block; height: 100%; display: flex; flex-direction: column;">
+                        <img src="/media/{{ fav.recipe.recipe_image }}" alt="{{ fav.recipe.recipe_name }}">
+                        <div class="recipe-card-body">
+                            <h3 class="title-md">{{ fav.recipe.recipe_name }}</h3>
+                            <div class="chip-row">
+                                {% if fav.recipe.cuisine_type %}<span class="chip">{{ fav.recipe.cuisine_type }}</span>{% endif %}
+                                <span class="chip warning"><i class="fa-solid fa-star"></i> {{ fav.recipe.recipe_rating|default:"0.0" }}/5</span>
+                            </div>
+                            <p class="meta-line">{{ fav.recipe.recipe_dec|truncatechars:85 }}</p>
+                            <div class="muted" style="font-size: 0.85rem; margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.06);">
+                                <i class="fa-solid fa-bookmark" style="color: var(--brand);"></i> Added on {{ fav.created_at|date:"M d, Y" }}
+                            </div>
+                        </div>
+                    </a>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="surface-card empty-state" style="padding: 80px 20px; text-align: center; border-radius: 28px; border: 1px dashed rgba(197, 106, 45, 0.3);">
+                <div style="width: 90px; height: 90px; background: rgba(197, 106, 45, 0.08); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                    <i class="fa-solid fa-book-open" style="font-size: 3rem; color: var(--brand);"></i>
+                </div>
+                <h3 class="title-lg" style="font-size: 2rem; margin-bottom: 12px;">Your cookbook is empty</h3>
+                <p class="lead" style="max-width: 440px; margin: 0 auto 28px;">Explore our collection of delicious recipes and tap the heart icon to save your favorites here.</p>
+                {% if is_own_profile %}<a href="/recipelist/" class="btn btn-primary" style="padding: 14px 28px; font-size: 1.1rem;">Browse Recipes</a>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Reviews Content -->
+        <div id="reviews" class="tab-content">
+            {% if user_reviews %}
+            <div class="reviews-grid">
+                {% for review in user_reviews %}
+                <div class="review-card-pro">
+                    <div class="review-pro-header">
+                        <div class="review-pro-recipe">
+                            <img src="/media/{{ review.recipe.recipe_image }}" class="review-recipe-img" alt="">
+                            <div class="review-recipe-meta">
+                                <h4><a href="/recipeview/{{ review.recipe.id }}/">{{ review.recipe.recipe_name }}</a></h4>
+                                <div class="review-pro-rating">
+                                    <i class="fa-solid fa-star"></i> {{ review.rating }}.0
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="review-pro-body">
+                        {% if review.comment %}
+                        "{{ review.comment }}"
+                        {% else %}
+                        <span class="muted"><i class="fa-solid fa-quote-left" style="opacity: 0.3; margin-right: 6px;"></i> Left a rating without a written review.</span>
+                        {% endif %}
+                    </div>
+                    <div class="review-pro-date">
+                        <i class="fa-regular fa-calendar" style="color: var(--brand);"></i> Reviewed on {{ review.created_at|date:"F j, Y" }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="surface-card empty-state" style="padding: 80px 20px; text-align: center; border-radius: 28px; border: 1px dashed rgba(197, 106, 45, 0.3);">
+                <div style="width: 90px; height: 90px; background: rgba(197, 106, 45, 0.08); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                    <i class="fa-regular fa-comments" style="font-size: 3rem; color: var(--brand);"></i>
+                </div>
+                <h3 class="title-lg" style="font-size: 2rem; margin-bottom: 12px;">No activity yet</h3>
+                <p class="lead" style="max-width: 440px; margin: 0 auto;">{% if is_own_profile %}You haven't{% else %}This user hasn't{% endif %} reviewed or rated any recipes yet. Your culinary feedback will appear here!</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </main>
+
+    {% include 'footer.html' %}
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.modern-tab').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>

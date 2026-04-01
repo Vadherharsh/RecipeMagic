@@ -1,0 +1,104 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Favorites | RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}?v=2.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+</head>
+<body class="page-shell" 
+      data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+      data-csrf="{{ csrf_token }}">
+    {% include 'header.html' %}
+
+    <main style="padding: 40px 0;">
+        <div class="page-wrap">
+            <div style="margin-bottom:32px;">
+                <span class="eyebrow"><i class="fa-solid fa-heart"></i> Your Collection</span>
+                <h1 class="title-lg" style="margin-top:16px;">Recipes you've favorited</h1>
+                <p class="muted">A curated list of dishes you want to try again and again.</p>
+            </div>
+
+            {% if favorites %}
+            <div class="grid-cards">
+                {% for fav in favorites %}
+                <article class="recipe-card" style="position: relative;">
+                    <button class="favorite-btn active" 
+                            data-recipe-id="{{ fav.recipe.id }}" 
+                            title="Remove from Favorites">
+                        <i class="fa-solid fa-heart"></i>
+                    </button>
+                    <img src="/media/{{ fav.recipe.recipe_image }}" alt="{{ fav.recipe.recipe_name }}">
+                    <div class="recipe-card-body">
+                        <h3 class="title-md">{{ fav.recipe.recipe_name }}</h3>
+                        <div class="chip-row">
+                            <span class="chip">{{ fav.recipe.cuisine_type }}</span>
+                            <span class="chip alt">{{ fav.recipe.difficulty }}</span>
+                            <span class="chip warning"><i class="fa-solid fa-star"></i> {{ fav.recipe.recipe_rating }}/5</span>
+                        </div>
+                        <p class="meta-line">{{ fav.recipe.recipe_dec|truncatechars:100 }}</p>
+                        
+                        <div style="margin-top:auto; padding-top:18px;">
+                            <a href="/recipeview/{{ fav.recipe.id }}" class="btn btn-primary">View recipe</a>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="surface-card favorites-empty">
+                <i class="fa-regular fa-heart"></i>
+                <h2 class="title-md">Your favorites list is empty</h2>
+                <p class="muted" style="margin-bottom: 24px;">Start exploring our collection and tap the heart icon on recipes you love!</p>
+                <a href="/recipelist/" class="btn btn-primary">Explore recipes</a>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    {% include 'footer.html' %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfToken = document.body.dataset.csrf;
+            const favoriteBtns = document.querySelectorAll('.favorite-btn');
+            
+            favoriteBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const recipeId = this.dataset.recipeId;
+                    const card = this.closest('.recipe-card');
+                    
+                    fetch(`/toggle-favorite/${recipeId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'removed') {
+                            // Smoothly remove the card if we are on the favorites page
+                            card.style.opacity = '0';
+                            card.style.transform = 'scale(0.9)';
+                            setTimeout(() => {
+                                card.remove();
+                                // If list is now empty, refresh to show empty state
+                                if (document.querySelectorAll('.recipe-card').length === 0) {
+                                    location.reload();
+                                }
+                            }, 300);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                });
+            });
+        });
+    </script>
+</body>
+</html>

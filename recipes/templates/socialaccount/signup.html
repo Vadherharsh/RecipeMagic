@@ -1,0 +1,74 @@
+{% load static %}
+{% load i18n %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finish Sign Up | RecipeMagic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}?v=2.0">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+    <main class="auth-shell">
+        <div class="page-wrap auth-card">
+            <div class="auth-grid">
+                <section class="auth-panel" style="padding: 60px 40px;">
+                    <div class="eyebrow"><i class="fa-brands fa-google"></i> Almost there</div>
+                    <h1 class="title-lg" style="margin: 16px 0;">Welcome to RecipeMagic</h1>
+                    <p class="muted">You are signing in with Google. Please choose a username to complete your profile.</p>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" style="margin-top:20px;">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form class="form-grid signup" id="signup_form" method="post" action="{% url 'socialaccount_signup' %}" style="margin-top: 30px;">
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="field">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="alert alert-error" style="font-size: 12px; padding: 4px 8px; margin-top: 4px;">{{ field.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        
+                        {% if redirect_field_value %}
+                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Create Profile</button>
+                    </form>
+
+                    <div class="auth-links" style="margin-top: 40px; justify-content: center;">
+                        <a href="{% url 'login' %}">Cancel and sign out</a>
+                    </div>
+                </section>
+
+                <section class="auth-visual" style="background: linear-gradient(135deg, #10b981 0%, #064e3b 100%);">
+                    <div class="auth-visual-copy">
+                        <div class="user-avatar-preview" style="margin-bottom: 24px; opacity: 0.9;">
+                           <i class="fa-solid fa-circle-user" style="font-size: 70px; color: #fff;"></i>
+                        </div>
+                        <h2 class="title-lg" style="color:#fff;">Connect Google.</h2>
+                        <p class="lead" style="color:rgba(255,255,255,0.84);">By connecting your Google account, you'll be able to log in with a single click in the future.</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Style Google Allauth form fields to match premium design
+        document.querySelectorAll('.form-grid input').forEach(input => {
+            input.classList.add('field-input'); // If there's a common class, or style directly
+        });
+    </script>
+</body>
+</html>

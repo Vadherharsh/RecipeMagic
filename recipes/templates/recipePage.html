@@ -10,28 +10,10 @@
     <link rel="stylesheet" href="{% static 'css/shared.css' %}?v=2.0">
     <link rel="stylesheet" href="{% static 'css/recipe-list.css' %}">
 </head>
-<body class="page-shell">
-    <header class="site-header">
-        <nav class="site-nav">
-            <a class="brand" href="/">
-                <span class="brand-mark"><i class="fa-solid fa-utensils"></i></span>
-                <span>RecipeMagic</span>
-            </a>
-            <div class="nav-links">
-                <a href="/">Home</a>
-                <a href="/about/">About</a>
-                <a href="/recipelist/" class="nav-pill">Recipes</a>
-                <a href="/contact/">Contact</a>
-                <a href="/random-recipe/" class="nav-outline">Random</a>
-                {% if user.is_authenticated %}
-                <a href="/profile/{{ user.username }}/" class="nav-outline"><i class="fa-regular fa-user"></i> {{ user.username }}</a>
-                <a href="/logout/" class="nav-primary">Logout</a>
-                {% else %}
-                <a href="/login/" class="nav-primary">Login</a>
-                {% endif %}
-            </div>
-        </nav>
-    </header>
+<body class="page-shell" 
+      data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+      data-csrf="{{ csrf_token }}">
+    {% include 'header.html' %}
 
     <main class="recipes-shell">
         <div class="page-wrap">
@@ -40,51 +22,109 @@
                 <h1 class="title-lg" style="margin:16px 0 10px;">Browse all recipes</h1>
                 <p class="muted">Filter by cuisine, difficulty, and rating to find the right dish faster.</p>
                 <form method="get" action="/recipelist/" class="form-grid" style="margin-top:20px;">
-                    <div class="search-row">
-                        <input type="text" name="search" placeholder="Search for a recipe..." value="{{ search_query }}">
-                        <select name="cuisine">
-                            <option value="">All cuisines</option>
-                            {% for cuisine in cuisines %}
-                            <option value="{{ cuisine }}" {% if cuisine == selected_cuisine %}selected{% endif %}>{{ cuisine }}</option>
-                            {% endfor %}
-                        </select>
-                        <select name="difficulty">
-                            <option value="">All difficulties</option>
-                            {% for difficulty in difficulties %}
-                            <option value="{{ difficulty }}" {% if difficulty == selected_difficulty %}selected{% endif %}>{{ difficulty }}</option>
-                            {% endfor %}
-                        </select>
-                        <select name="min_rating">
-                            <option value="">Minimum rating</option>
-                            <option value="5" {% if selected_rating == '5' %}selected{% endif %}>5 stars</option>
-                            <option value="4" {% if selected_rating == '4' %}selected{% endif %}>4+ stars</option>
-                            <option value="3" {% if selected_rating == '3' %}selected{% endif %}>3+ stars</option>
-                        </select>
-                        <button type="submit" class="btn btn-primary">Apply</button>
+                    <div class="search-row-premium">
+                        <div class="input-icon-group premium-focus">
+                            <i class="fa-solid fa-magnifying-glass" style="color: var(--brand);"></i>
+                            <input type="text" name="search" placeholder="What would you like to cook?" value="{{ search_query }}">
+                        </div>
+                        <div class="input-icon-group premium-focus">
+                            <i class="fa-solid fa-earth-americas" style="color: #4285f4;"></i>
+                            <div class="custom-select" data-name="cuisine">
+                                <div class="select-trigger">
+                                    <span>{% if selected_cuisine %}{{ selected_cuisine }}{% else %}Select Cuisine{% endif %}</span>
+                                    <i class="fa-solid fa-chevron-down chevron"></i>
+                                </div>
+                                <div class="select-options">
+                                    <div class="option {% if not selected_cuisine %}selected{% endif %}" data-value="">Select Cuisine</div>
+                                    {% for cuisine in cuisines %}
+                                    <div class="option {% if cuisine == selected_cuisine %}selected{% endif %}" data-value="{{ cuisine }}">{{ cuisine }}</div>
+                                    {% endfor %}
+                                </div>
+                                <input type="hidden" name="cuisine" value="{{ selected_cuisine }}">
+                            </div>
+                        </div>
+                        <div class="input-icon-group premium-focus">
+                            <i class="fa-solid fa-gauge-high" style="color: #10b981;"></i>
+                            <div class="custom-select" data-name="difficulty">
+                                <div class="select-trigger">
+                                    <span>{% if selected_difficulty %}{{ selected_difficulty }}{% else %}Any Difficulty{% endif %}</span>
+                                    <i class="fa-solid fa-chevron-down chevron"></i>
+                                </div>
+                                <div class="select-options">
+                                    <div class="option {% if not selected_difficulty %}selected{% endif %}" data-value="">Any Difficulty</div>
+                                    {% for difficulty in difficulties %}
+                                    <div class="option {% if difficulty == selected_difficulty %}selected{% endif %}" data-value="{{ difficulty }}">{{ difficulty }}</div>
+                                    {% endfor %}
+                                </div>
+                                <input type="hidden" name="difficulty" value="{{ selected_difficulty }}">
+                            </div>
+                        </div>
+                        <div class="input-icon-group premium-focus">
+                            <i class="fa-solid fa-star" style="color: var(--warning);"></i>
+                            <div class="custom-select" data-name="min_rating">
+                                <div class="select-trigger">
+                                    <span>
+                                        {% if selected_rating == '5' %}5 Stars Only
+                                        {% elif selected_rating == '4' %}4+ Stars
+                                        {% elif selected_rating == '3' %}3+ Stars
+                                        {% else %}Min Rating{% endif %}
+                                    </span>
+                                    <i class="fa-solid fa-chevron-down chevron"></i>
+                                </div>
+                                <div class="select-options">
+                                    <div class="option {% if not selected_rating %}selected{% endif %}" data-value="">Min Rating</div>
+                                    <div class="option {% if selected_rating == '5' %}selected{% endif %}" data-value="5">5 Stars Only</div>
+                                    <div class="option {% if selected_rating == '4' %}selected{% endif %}" data-value="4">4+ Stars</div>
+                                    <div class="option {% if selected_rating == '3' %}selected{% endif %}" data-value="3">3+ Stars</div>
+                                </div>
+                                <input type="hidden" name="min_rating" value="{{ selected_rating }}">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-search-apply"><i class="fa-solid fa-check"></i> Apply</button>
                     </div>
                 </form>
             </section>
 
             <section class="surface-card results-bar">
                 <div><strong>{{ recipes_data|length }}</strong> recipes found</div>
-                <form method="get" action="/recipelist/">
+                <form method="get" action="/recipelist/" id="sort-form">
                     {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
                     {% if selected_cuisine %}<input type="hidden" name="cuisine" value="{{ selected_cuisine }}">{% endif %}
                     {% if selected_difficulty %}<input type="hidden" name="difficulty" value="{{ selected_difficulty }}">{% endif %}
                     {% if selected_rating %}<input type="hidden" name="min_rating" value="{{ selected_rating }}">{% endif %}
-                    <select name="sort_by" onchange="this.form.submit()">
-                        <option value="">Sort by</option>
-                        <option value="rating" {% if selected_sort == 'rating' %}selected{% endif %}>Highest rated</option>
-                        <option value="name" {% if selected_sort == 'name' %}selected{% endif %}>Name A-Z</option>
-                        <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest first</option>
-                    </select>
+                    
+                    <div class="custom-select" data-name="sort_by" style="min-width: 180px;">
+                        <div class="select-trigger">
+                            <span>
+                                {% if selected_sort == 'rating' %}Highest rated
+                                {% elif selected_sort == 'name' %}Name A-Z
+                                {% elif selected_sort == 'newest' %}Newest first
+                                {% else %}Sort by{% endif %}
+                            </span>
+                            <i class="fa-solid fa-chevron-down chevron"></i>
+                        </div>
+                        <div class="select-options">
+                            <div class="option {% if not selected_sort %}selected{% endif %}" data-value="">Sort by</div>
+                            <div class="option {% if selected_sort == 'rating' %}selected{% endif %}" data-value="rating">Highest rated</div>
+                            <div class="option {% if selected_sort == 'name' %}selected{% endif %}" data-value="name">Name A-Z</div>
+                            <div class="option {% if selected_sort == 'newest' %}selected{% endif %}" data-value="newest">Newest first</div>
+                        </div>
+                        <input type="hidden" name="sort_by" value="{{ selected_sort }}">
+                    </div>
                 </form>
             </section>
 
             {% if recipes_data %}
             <div class="grid-cards">
                 {% for recipe in recipes_data %}
-                <article class="recipe-card">
+                <article class="recipe-card" style="position: relative;">
+                    {% if user.is_authenticated %}
+                    <button class="favorite-btn {% if recipe.id in favorited_recipe_ids %}active{% endif %}" 
+                            data-recipe-id="{{ recipe.id }}" 
+                            title="Toggle Favorite">
+                        <i class="{% if recipe.id in favorited_recipe_ids %}fa-solid{% else %}fa-regular{% endif %} fa-heart"></i>
+                    </button>
+                    {% endif %}
                     <img src="/media/{{ recipe.recipe_image }}" alt="{{ recipe.recipe_name }}">
                     <div class="recipe-card-body">
                         <h3 class="title-md">{{ recipe.recipe_name }}</h3>
@@ -104,7 +144,7 @@
                             {% endif %}
                         </div>
 
-                        <div style="margin-top:18px;">
+                        <div style="margin-top:auto; padding-top:18px;">
                             <a href="/recipeview/{{ recipe.id }}" class="btn btn-primary">View recipe</a>
                         </div>
                     </div>
@@ -122,5 +162,140 @@
     </main>
 
     {% include 'footer.html' %}
+
+    <div id="toast-container"></div>
+
+    <script>
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'circle-check';
+            if (type === 'warning') icon = 'triangle-exclamation';
+            if (type === 'error') icon = 'circle-xmark';
+            
+            toast.innerHTML = `<i class="fa-solid fa-${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Read brand-safe data from the body attributes
+            const isAuthenticated = document.body.dataset.authenticated === 'true';
+            const csrfToken = document.body.dataset.csrf;
+
+            // Favorite Button & Chip Logic
+            const favoriteTriggers = document.querySelectorAll('.favorite-btn, .chip.interactive');
+            favoriteTriggers.forEach(trigger => {
+                trigger.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (!isAuthenticated) {
+                        showToast('Please log in to save favorites!', 'warning');
+                        return;
+                    }
+
+                    const recipeId = this.dataset.recipeId;
+                    
+                    fetch(`/toggle-favorite/${recipeId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const allTriggers = document.querySelectorAll(`[data-recipe-id="${recipeId}"]`);
+                        allTriggers.forEach(trig => {
+                            const icon = trig.querySelector('i');
+                            const countSpan = trig.querySelector('.fav-count');
+                            
+                            if (data.status === 'added') {
+                                trig.classList.add('active');
+                                if (icon) {
+                                    icon.classList.remove('fa-regular');
+                                    icon.classList.add('fa-solid');
+                                }
+                                if (countSpan) {
+                                    countSpan.textContent = parseInt(countSpan.textContent) + 1;
+                                }
+                            } else {
+                                trig.classList.remove('active');
+                                if (icon) {
+                                    icon.classList.remove('fa-solid');
+                                    icon.classList.add('fa-regular');
+                                }
+                                if (countSpan) {
+                                    countSpan.textContent = Math.max(0, parseInt(countSpan.textContent) - 1);
+                                }
+                            }
+                        });
+                        
+                        showToast(data.status === 'added' ? 'Added to favorites!' : 'Removed from favorites!', 'success');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showToast('Something went wrong. Try again.', 'error');
+                    });
+                });
+            });
+
+            // Custom Select Logic
+            const selects = document.querySelectorAll('.custom-select');
+            
+            selects.forEach(select => {
+                const trigger = select.querySelector('.select-trigger');
+                const options = select.querySelectorAll('.option');
+                const hiddenInput = select.querySelector('input[type="hidden"]');
+                const triggerText = trigger.querySelector('span');
+
+                trigger.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    // Close other selects
+                    selects.forEach(s => {
+                        if (s !== select) s.classList.remove('active');
+                    });
+                    select.classList.toggle('active');
+                });
+
+                options.forEach(option => {
+                    option.addEventListener('click', function() {
+                        const value = this.dataset.value;
+                        const text = this.textContent;
+
+                        // Update hidden input
+                        hiddenInput.value = value;
+                        triggerText.textContent = text;
+
+                        // Update visuals
+                        options.forEach(opt => opt.classList.remove('selected'));
+                        this.classList.add('selected');
+
+                        // Close dropdown
+                        select.classList.remove('active');
+
+                        // If it's the sort form, submit automatically
+                        if (select.closest('#sort-form')) {
+                            select.closest('#sort-form').submit();
+                        }
+                    });
+                });
+            });
+
+            // Close on click outside
+            document.addEventListener('click', function() {
+                selects.forEach(select => select.classList.remove('active'));
+            });
+        });
+    </script>
 </body>
 </html>

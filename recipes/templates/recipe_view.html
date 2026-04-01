@@ -40,27 +40,24 @@
         }
     </style>
 </head>
-<body class="page-shell">
-    <header class="site-header">
-        <nav class="site-nav">
-            <a class="brand" href="/">
-                <span class="brand-mark"><i class="fa-solid fa-utensils"></i></span>
-                <span>RecipeMagic</span>
-            </a>
-            <div class="nav-links">
-                <a href="/">Home</a>
-                <a href="/about/">About</a>
-                <a href="/recipelist/" class="nav-pill">Recipes</a>
-                <a href="/contact/">Contact</a>
-            </div>
-        </nav>
-    </header>
+<body class="page-shell" 
+      data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+      data-csrf="{{ csrf_token }}">
+    {% include 'header.html' %}
 
     <main class="recipe-view-shell">
         <div class="page-wrap">
             <section class="surface-card recipe-hero-panel">
                 <div class="recipe-hero-grid">
-                    <div class="recipe-hero-image">
+                    <div class="recipe-hero-image" style="position: relative;">
+                        {% if user.is_authenticated %}
+                        <button class="favorite-btn {% if is_favorited %}active{% endif %}" 
+                                id="detail-favorite-btn" 
+                                data-recipe-id="{{ recipes_data.id }}" 
+                                title="Toggle Favorite">
+                            <i class="{% if is_favorited %}fa-solid{% else %}fa-regular{% endif %} fa-heart"></i>
+                        </button>
+                        {% endif %}
                         <img src="/media/{{ recipes_data.recipe_image }}" alt="{{ recipes_data.recipe_name }}">
                     </div>
                     <div class="recipe-hero-copy">
@@ -132,6 +129,49 @@
     {% include 'footer.html' %}
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Read brand-safe data from the body attributes
+            const isAuthenticated = document.body.dataset.authenticated === 'true';
+            const csrfToken = document.body.dataset.csrf;
+
+            const favoriteBtn = document.getElementById('detail-favorite-btn');
+            if (favoriteBtn) {
+                favoriteBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    if (!isAuthenticated) {
+                        // The user can't favorite if not logged in
+                        showToast('Please log in to save favorites!', 'warning');
+                        return;
+                    }
+
+                    const recipeId = this.dataset.recipeId;
+                    const icon = this.querySelector('i');
+                    
+                    fetch(`/toggle-favorite/${recipeId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'added') {
+                            this.classList.add('active');
+                            icon.classList.remove('fa-regular');
+                            icon.classList.add('fa-solid');
+                        } else {
+                            this.classList.remove('active');
+                            icon.classList.remove('fa-solid');
+                            icon.classList.add('fa-regular');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                });
+            }
+        });
+
         function copyRecipeLink() {
             const field = document.getElementById("recipeUrl");
             field.select();
