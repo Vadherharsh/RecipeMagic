@@ -1,13 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
-from .models import RecipesList, recipeRequest, UserOTP, Favorite, Review
+from .models import RecipesList, recipeRequest, UserOTP, Favorite
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.conf import settings
-from django.db.models import Avg
 from django.utils import timezone
 import random
 
@@ -247,25 +246,10 @@ def user_profile(request, username):
     """Display user profile with their activity"""
     profile_user = get_object_or_404(User, username=username)
     
-    # Get user's recipes (if they have any - you'd need a UserRecipe model for this)
-    # For now, we'll show their reviews and favorites
-    
-    # Get user's reviews
-    user_reviews = Review.objects.filter(user=profile_user).select_related('recipe').order_by('-created_at')
-    
     # Get user's favorites
     user_favorites = Favorite.objects.filter(user=profile_user).select_related('recipe').order_by('-created_at')
     
-    # Get counts
-    review_count = user_reviews.count()
     favorite_count = user_favorites.count()
-    
-    # Calculate average rating given by user
-    avg_rating_given = user_reviews.aggregate(Avg('rating'))['rating__avg']
-    if avg_rating_given:
-        avg_rating_given = round(avg_rating_given, 1)
-    else:
-        avg_rating_given = 0
     
     # Check if this is the logged-in user's own profile
     is_own_profile = False
@@ -274,11 +258,8 @@ def user_profile(request, username):
     
     context = {
         'profile_user': profile_user,
-        'user_reviews': user_reviews,
         'user_favorites': user_favorites,
-        'review_count': review_count,
         'favorite_count': favorite_count,
-        'avg_rating_given': avg_rating_given,
         'is_own_profile': is_own_profile,
     }
     
@@ -292,17 +273,27 @@ def trending_recipes(request):
     """Show most popular recipes based on real user activity"""
     from django.db.models import Avg, Count
     
-    # We annotate the count of favorites and reviews, plus the calculated average rating
+    # Annotate each recipe with favorite_count, review_count, and avg rating
     recipes = RecipesList.objects.annotate(
         calculated_avg=Avg('reviews__rating'),
         favorite_count=Count('favorites', distinct=True),
         review_count=Count('reviews', distinct=True)
     ).order_by('-calculated_avg', '-favorite_count', '-id')
     
+    # Evaluate the queryset into a list so we can iterate multiple times
+    recipes_list = list(recipes)
+    
     # Process recipes to handle None values gracefully for the template
-    for recipe in recipes:
+    for recipe in recipes_list:
         # Use calculated avg if available, else fallback to static rating
         recipe.avg_rating = round(recipe.calculated_avg, 1) if recipe.calculated_avg else float(recipe.recipe_rating)
+    
+    # Compute correct stats for the header stat cards
+    # Top rating: pick the max avg_rating across all recipes
+    top_rating = max((r.avg_rating for r in recipes_list), default=0)
+    
+    # Most favorited: recipe with the highest favorite_count
+    most_favorited_count = max((r.favorite_count for r in recipes_list), default=0)
     
     # Get favorites for current user
     favorited_recipe_ids = []
@@ -310,9 +301,11 @@ def trending_recipes(request):
         favorited_recipe_ids = list(Favorite.objects.filter(user=request.user).values_list('recipe_id', flat=True))
     
     context = {
-        'trending_recipes': recipes,
-        'total_recipes': recipes.count(),
+        'trending_recipes': recipes_list,
+        'total_recipes': len(recipes_list),
         'favorited_recipe_ids': favorited_recipe_ids,
+        'top_rating': top_rating,
+        'most_favorited_count': most_favorited_count,
     }
     
     return render(request, 'trending.html', context)
